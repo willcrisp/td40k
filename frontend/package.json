@@ -10,13 +10,17 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.2.5",
+    "axios": "^1.14.0",
     "pinia": "^3.0.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.2.5",
-    "vue": "^3.4.27"
+    "uuid": "^13.0.0",
+    "vue": "^3.4.27",
+    "vue-router": "^5.0.4"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-vue": "^5.0.5",
     "typescript": "^5.4.5",
     "vite": "^5.3.1",
