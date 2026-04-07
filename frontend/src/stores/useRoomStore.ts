@@ -40,6 +40,16 @@ export const useRoomStore = defineStore('room', () => {
 
   const isGameMaster = computed(() => role.value === 'game_master');
 
+  // Whether the GM has also claimed a player slot
+  const gmPlayerRole = computed<'attacker' | 'defender' | null>(() => {
+    const player = usePlayerStore();
+    const pid = player.playerId;
+    if (!pid || gameMasterId.value !== pid) return null;
+    if (attackerId.value === pid) return 'attacker';
+    if (defenderId.value === pid) return 'defender';
+    return null;
+  });
+
   const canStart = computed(
     () =>
       status.value === 'lobby' &&
@@ -112,6 +122,7 @@ export const useRoomStore = defineStore('room', () => {
     winner,
     role,
     isGameMaster,
+    gmPlayerRole,
     canStart,
     loadRoom,
     applyServerState,

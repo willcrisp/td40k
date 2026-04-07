@@ -17,7 +17,7 @@ const playerStore = usePlayerStore();
 const wsStore = useWebSocketStore();
 
 const roomId = route.params.id as string;
-const { status, role, canStart, isGameMaster } = storeToRefs(roomStore);
+const { status, role, canStart, isGameMaster, gmPlayerRole } = storeToRefs(roomStore);
 const { playerId } = storeToRefs(playerStore);
 
 const error = ref<string | null>(null);
@@ -84,9 +84,23 @@ async function handleStart() {
 
     <!-- Game Master view -->
     <div v-if="isGameMaster" class="mt-8">
-      <Message severity="info">
-        You are the Game Master. Wait for both players to join.
-      </Message>
+      <!-- GM hasn't chosen a side yet -->
+      <template v-if="gmPlayerRole === null">
+        <Message severity="info">
+          You are the Game Master. Choose your side, then start the game once
+          the other player has joined.
+        </Message>
+        <RoleSelector @select="handleRoleSelect" />
+      </template>
+
+      <!-- GM has chosen a side -->
+      <template v-else>
+        <Message severity="success">
+          You are the Game Master playing as
+          <strong>{{ gmPlayerRole }}</strong>.
+        </Message>
+      </template>
+
       <Button
         label="Start Game"
         class="mt-6 w-full"
@@ -96,12 +110,12 @@ async function handleStart() {
       />
     </div>
 
-    <!-- Player role selection -->
+    <!-- Non-GM: no role yet -->
     <div v-else-if="role === null">
       <RoleSelector @select="handleRoleSelect" />
     </div>
 
-    <!-- Already has a role -->
+    <!-- Non-GM: already has a role -->
     <div v-else class="mt-8">
       <Message severity="success">
         You've joined as
