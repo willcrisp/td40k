@@ -5,14 +5,16 @@ WORKDIR /app
 
 RUN apk add --no-cache git
 
-# Copy all source first so go mod tidy can resolve everything
-COPY . .
+# Copy go module files first for layer caching
+COPY backend/go.mod backend/go.sum ./
+RUN GONOSUMDB=* GOFLAGS=-mod=mod go mod download
 
-# Generate a valid go.sum and download deps
-RUN GONOSUMDB=* GOFLAGS=-mod=mod go mod tidy
+# Copy backend source and migration files
+COPY backend/ ./
+COPY db/migrations/ ./db/migrations/
 
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server
 
 # Run stage
 FROM alpine:3.19
@@ -21,6 +23,7 @@ RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 COPY --from=builder /app/server .
+COPY --from=builder /app/db/migrations/ ./db/migrations/
 
 EXPOSE 8080
 
