@@ -18,7 +18,8 @@ docker compose up --build
 
 | Service  | URL                        |
 |----------|----------------------------|
-| Frontend | http://localhost:3000       |
+| Frontend | http://localhost:3000      |
+| Frontend dev| http://localhost:5173   |
 | Backend  | http://localhost:8080/api  |
 | Postgres | localhost:5432             |
 

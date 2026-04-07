@@ -65,63 +65,73 @@ async function handleStart() {
 </script>
 
 <template>
-  <div class="min-h-screen p-6 max-w-3xl mx-auto">
-    <!-- Back -->
-    <Button
-      label="← Home"
-      text
-      size="small"
-      class="mb-6"
-      @click="router.push('/')"
-    />
-
-    <LobbyStatus />
-
-    <!-- Error -->
-    <Message v-if="error" severity="error" class="mt-4">
-      {{ error }}
-    </Message>
-
-    <!-- Game Master view -->
-    <div v-if="isGameMaster" class="mt-8">
-      <!-- GM hasn't chosen a side yet -->
-      <template v-if="gmPlayerRole === null">
-        <Message severity="info">
-          You are the Game Master. Choose your side, then start the game once
-          the other player has joined.
-        </Message>
-        <RoleSelector @select="handleRoleSelect" />
-      </template>
-
-      <!-- GM has chosen a side -->
-      <template v-else>
-        <Message severity="success">
-          You are the Game Master playing as
-          <strong>{{ gmPlayerRole }}</strong>.
-        </Message>
-      </template>
-
+  <div class="layout-terminal">
+    <!-- Back to Hub -->
+    <div class="mb-10">
       <Button
-        label="Start Game"
-        class="mt-6 w-full"
-        size="large"
-        :disabled="!canStart"
-        @click="handleStart"
+        label="&lt;&lt; BACK TO LOBBY"
+        class="btn-secondary-tactical"
+        @click="router.push('/')"
       />
     </div>
 
-    <!-- Non-GM: no role yet -->
-    <div v-else-if="role === null">
-      <RoleSelector @select="handleRoleSelect" />
+    <!-- Header Section -->
+    <div class="mb-8 border-b border-outline-variant pb-4">
+      <h1 class="text-3xl font-display text-primary">GAME LOBBY</h1>
+      <p class="text-sm font-mono text-surface-variant">GAME ID: {{ roomId.split('-')[0].toUpperCase() }} // STATUS: CONNECTED</p>
     </div>
 
-    <!-- Non-GM: already has a role -->
-    <div v-else class="mt-8">
-      <Message severity="success">
-        You've joined as
-        <strong>{{ role }}</strong>. Waiting for the Game Master to
-        start the game…
-      </Message>
+    <LobbyStatus />
+
+    <!-- Error Messaging (System Alert) -->
+    <div v-if="error" class="mt-6 panel-low p-4 border-l-4 border-primary riveted">
+      <p class="text-xs font-mono text-primary mb-1">ERROR</p>
+      <p class="text-sm font-mono">{{ error }}</p>
+    </div>
+
+    <!-- Interface Logic -->
+    <div class="mt-10 max-w-2xl">
+      <!-- Game Master view -->
+      <div v-if="isGameMaster">
+        <!-- GM Protocol Prompt -->
+        <div v-if="gmPlayerRole === null" class="mb-8 panel-low p-6 border-l-4 border-tertiary riveted">
+          <h2 class="text-xl font-display text-tertiary mb-2">SELECT YOUR ROLE</h2>
+          <p class="text-sm text-surface-variant mb-6 uppercase">Choose a side to begin the game.</p>
+          <RoleSelector @select="handleRoleSelect" />
+        </div>
+
+        <!-- GM Assigned State -->
+        <div v-else class="mb-8 panel-lowest p-4 border-l-4 border-secondary-container">
+          <p class="text-xs font-mono text-secondary mb-1">GAME MASTER</p>
+          <p class="text-sm font-display text-white">YOUR ROLE: {{ gmPlayerRole.toUpperCase() }}</p>
+        </div>
+
+        <Button
+          label="START GAME"
+          class="btn-tactical w-full h-16 text-xl"
+          :disabled="!canStart"
+          @click="handleStart"
+        />
+        <p v-if="!canStart" class="text-[10px] font-mono text-center mt-2 text-surface-variant uppercase">
+          Awaiting players to join before starting...
+        </p>
+      </div>
+
+      <!-- Non-GM: no role yet -->
+      <div v-else-if="role === null" class="panel-low p-6 border-l-4 border-tertiary riveted">
+        <h2 class="text-xl font-display text-tertiary mb-2">SELECT YOUR ROLE</h2>
+        <p class="text-sm text-surface-variant mb-6 uppercase">Choose a side to join the game.</p>
+        <RoleSelector @select="handleRoleSelect" />
+      </div>
+
+      <!-- Non-GM: already has a role -->
+      <div v-else class="panel-low p-6 border-l-4 border-secondary-container riveted">
+        <p class="text-xs font-mono text-secondary mb-1">ROLE ASSIGNED</p>
+        <h2 class="text-xl font-display text-white mb-2">YOUR ROLE: {{ role.toUpperCase() }}</h2>
+        <p class="text-sm text-surface-variant uppercase">
+          Waiting for the Game Master to start the game...
+        </p>
+      </div>
     </div>
   </div>
 </template>

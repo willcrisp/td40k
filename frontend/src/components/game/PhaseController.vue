@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { ref, computed } from 'vue';
-import Button from 'primevue/button';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useConfirm } from 'primevue/useconfirm';
 import { useRoomStore } from '@/stores/useRoomStore';
-import { PHASE_LABELS } from '@/types';
 
 const room = useRoomStore();
 const confirm = useConfirm();
@@ -52,33 +50,56 @@ async function handlePrev() {
 <template>
   <ConfirmDialog />
 
-  <div
+  <footer
     v-if="isGameMaster"
-    class="flex items-center gap-3"
+    class="phase-controller panel-high border-t border-outline-variant"
   >
-    <Button
-      icon="pi pi-chevron-left"
-      severity="secondary"
-      rounded
-      :loading="loading"
-      @click="handlePrev"
-    />
+    <div class="flex items-center justify-between gap-6 w-full max-w-5xl px-8 flex-nowrap">
+      <button
+        class="btn-secondary-tactical px-6 h-12 flex items-center gap-3 cursor-pointer flex-shrink-0 whitespace-nowrap"
+        :disabled="loading"
+        @click="handlePrev"
+      >
+        <i class="pi pi-chevron-left text-sm" />
+        <span class="font-display tracking-widest text-xs">PREVIOUS PHASE</span>
+      </button>
 
-    <div class="text-center min-w-40">
-      <p class="text-xs text-surface-400 uppercase tracking-widest">
-        Current Phase
-      </p>
-      <p class="font-bold text-sm">
-        {{ PHASE_LABELS[currentPhase] }}
-      </p>
+      <div class="flex-1 flex flex-col items-center min-w-0">
+        <p class="text-[10px] font-mono text-surface-variant uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+          GAME MASTER CONTROL
+        </p>
+        <div class="w-full h-[1px] bg-outline-variant opacity-20 mt-1"></div>
+      </div>
+
+      <button
+        class="btn-tactical px-10 h-10 flex items-center gap-4 flex-shrink-0 whitespace-nowrap"
+        :class="{ 'pulse-final': isFinalStep }"
+        :disabled="loading"
+        @click="handleNext"
+      >
+        <span class="font-display tracking-widest text-sm">NEXT PHASE</span>
+        <i class="pi pi-chevron-right text-xs" />
+      </button>
     </div>
-
-    <Button
-      icon="pi pi-chevron-right"
-      :severity="isFinalStep ? 'danger' : 'primary'"
-      rounded
-      :loading="loading"
-      @click="handleNext"
-    />
-  </div>
+  </footer>
 </template>
+
+<style scoped>
+.phase-controller {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  min-height: 64px;
+  z-index: 20;
+}
+
+.pulse-final {
+  animation: pulse-danger 3s infinite steps(2);
+}
+
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.6; filter: brightness(0.85); }
+}
+</style>

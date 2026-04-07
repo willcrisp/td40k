@@ -7,6 +7,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS rooms_set_updated_at ON rooms;
 CREATE TRIGGER rooms_set_updated_at
 BEFORE UPDATE ON rooms
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -34,6 +35,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS room_state_changed ON rooms;
 CREATE TRIGGER room_state_changed
 AFTER INSERT OR UPDATE ON rooms
 FOR EACH ROW EXECUTE FUNCTION notify_room_update();

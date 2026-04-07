@@ -23,31 +23,50 @@ function submit() {
   <Dialog
     :visible="props.visible"
     @update:visible="emit('update:visible', $event)"
-    header="Create New Game"
     modal
-    :style="{ width: '400px' }"
+    :style="{ width: '450px' }"
+    :closable="false"
   >
-    <div class="flex flex-col gap-4 pt-2">
-      <label for="game-name" class="font-semibold">Game Name</label>
-      <InputText
-        id="game-name"
-        v-model="gameName"
-        placeholder="e.g. Battle for Cadia"
-        @keyup.enter="submit"
-        autofocus
-      />
+    <template #header>
+      <div class="flex items-center gap-2">
+        <div class="w-1.5 h-6 bg-tertiary"></div>
+        <h2 class="text-xl font-display text-white">NEW GAME</h2>
+      </div>
+    </template>
+
+    <div class="flex flex-col gap-6 py-6 riveted">
+      <div class="flex flex-col gap-2">
+        <label for="game-name" class="text-xs font-mono text-surface-variant uppercase">
+          Game name
+        </label>
+        <InputText
+          id="game-name"
+          v-model="gameName"
+          placeholder="Enter a name for your game..."
+          class="font-mono text-sm"
+          @keyup.enter="submit"
+          autofocus
+        />
+        <p class="text-[10px] font-mono text-tertiary mt-1 opacity-70">
+          Note: This name will be visible to all players.
+        </p>
+      </div>
     </div>
+
     <template #footer>
-      <Button
-        label="Cancel"
-        severity="secondary"
-        @click="emit('update:visible', false)"
-      />
-      <Button
-        label="Create"
-        :disabled="!gameName.trim()"
-        @click="submit"
-      />
+      <div class="flex gap-4 w-full pt-4">
+        <Button
+          label="CANCEL"
+          class="btn-secondary-tactical flex-1"
+          @click="emit('update:visible', false)"
+        />
+        <Button
+          label="CREATE"
+          class="btn-tactical flex-1"
+          :disabled="!gameName.trim()"
+          @click="submit"
+        />
+      </div>
     </template>
   </Dialog>
 </template>

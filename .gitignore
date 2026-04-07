@@ -58,3 +58,6 @@ out/
 .DS_Store
 *.pem
 .cache/
+
+.agents
+.claude

@@ -4,6 +4,7 @@ import {
   onMounted,
   onUnmounted,
   watchEffect,
+  nextTick,
 } from 'vue';
 import { useBoardStore } from '@/stores/useBoardStore';
 import { useBoardControls } from '@/composables/useBoardControls';
@@ -39,12 +40,17 @@ function draw() {
   const w = BOARD_W_IN * BASE_PX;
   const h = BOARD_H_IN * BASE_PX;
 
-  // Board background
-  ctx.fillStyle = '#1a3020';
+  // Rotate around the center of the board
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate((board.rotation * Math.PI) / 180);
+  ctx.translate(-w / 2, -h / 2);
+
+  // Board background — dark tactical surface
+  ctx.fillStyle = '#131313';
   ctx.fillRect(0, 0, w, h);
 
-  // Grid lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  // Grid lines — subtle industrial grid
+  ctx.strokeStyle = 'rgba(229, 226, 225, 0.06)';
   ctx.lineWidth = 0.5 / board.zoom;
 
   for (let x = 0; x <= BOARD_W_IN; x++) {
@@ -61,16 +67,23 @@ function draw() {
     ctx.stroke();
   }
 
-  // Board border
-  ctx.strokeStyle = '#8b7355';
-  ctx.lineWidth = 3 / board.zoom;
+  // Board border — muted industrial edge
+  ctx.strokeStyle = '#5a403d';
+  ctx.lineWidth = 2 / board.zoom;
   ctx.strokeRect(0, 0, w, h);
 
-  // Inch labels at 6" intervals (optional, helps orientation)
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = `${10 / board.zoom}px monospace`;
+  // Inch labels at 6" intervals — amber phosphor style
+  ctx.fillStyle = 'rgba(255, 185, 82, 0.25)';
+  ctx.font = `${10 / board.zoom}px 'Space Grotesk', monospace`;
+  
+  // Width labels (top edge)
   for (let x = 0; x <= BOARD_W_IN; x += 6) {
     ctx.fillText(`${x}"`, x * BASE_PX + 2, 10 / board.zoom);
+  }
+
+  // Height labels (left edge)
+  for (let y = 6; y <= BOARD_H_IN; y += 6) {
+    ctx.fillText(`${y}"`, 2, y * BASE_PX - 2);
   }
 
   ctx.restore();
@@ -81,7 +94,8 @@ function loop() {
   animFrame = requestAnimationFrame(loop);
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   // Centre the board
