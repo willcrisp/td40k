@@ -8,7 +8,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/willcrisp/td40k/internal/db"
+	"github.com/willcrisp/td40k/internal/handlers"
 	mw "github.com/willcrisp/td40k/internal/middleware"
+	"github.com/willcrisp/td40k/internal/listen"
+	"github.com/willcrisp/td40k/internal/ws"
 )
 
 func main() {
@@ -24,15 +27,32 @@ func main() {
 		log.Fatalf("migrations: %v", err)
 	}
 
+	hub := ws.NewHub()
+	go hub.Run()
+	go listen.StartListener(dsn, hub)
+
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(corsMiddleware)
 
-	// Protected routes — player auth required
+	// WebSocket (no player auth — player_id via query param)
+	r.Get("/ws", ws.ServeWS(hub))
+
+	// Public
+	r.Post("/api/players", handlers.HandleUpsertPlayer)
+
+	// Protected
 	r.Group(func(r chi.Router) {
 		r.Use(mw.RequirePlayerID)
-		// handlers registered in Document 003
+		r.Get("/api/players/{id}/games", handlers.HandleGetPlayerGames)
+		r.Post("/api/rooms", handlers.HandleCreateRoom)
+		r.Get("/api/rooms/{id}", handlers.HandleGetRoom)
+		r.Post("/api/rooms/{id}/join", handlers.HandleJoinRoom)
+		r.Post("/api/rooms/{id}/start", handlers.HandleStartGame)
+		r.Post("/api/rooms/{id}/phase/next", handlers.HandlePhaseNext)
+		r.Post("/api/rooms/{id}/phase/prev", handlers.HandlePhasePrev)
+		r.Post("/api/rooms/{id}/close", handlers.HandleCloseRoom)
 	})
 
 	port := os.Getenv("PORT")
