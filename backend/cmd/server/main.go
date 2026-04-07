@@ -53,6 +53,7 @@ func main() {
 		r.Post("/api/rooms/{id}/phase/next", handlers.HandlePhaseNext)
 		r.Post("/api/rooms/{id}/phase/prev", handlers.HandlePhasePrev)
 		r.Post("/api/rooms/{id}/close", handlers.HandleCloseRoom)
+		r.Post("/api/wahapedia/sync", handlers.HandleSyncWahapedia)
 	})
 
 	port := os.Getenv("PORT")

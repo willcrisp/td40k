@@ -30,6 +30,7 @@ func RunMigrations() error {
 		"db/migrations/002_create_rooms.sql",
 		"db/migrations/003_create_room_events.sql",
 		"db/migrations/004_create_triggers.sql",
+		"db/migrations/005_create_wahapedia_tables.sql",
 	}
 	for _, path := range migrations {
 		sql, err := os.ReadFile(path)
