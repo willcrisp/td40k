@@ -1,25 +1,24 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import PrimeVue from 'primevue/config'
-import Aura from '@primevue/themes/aura'
-import 'primeicons/primeicons.css'
-import App from './App.vue'
-import './style.css'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
+import 'primeicons/primeicons.css';
+import router from '@/router';
+import App from './App.vue';
 
-const app = createApp(App)
+const app = createApp(App);
 
-// Pinia must be registered before PrimeVue (or any plugin that may use stores)
-// so that stores are available during plugin initialisation.
-app.use(createPinia())
-
+app.use(createPinia());
+app.use(router);
 app.use(PrimeVue, {
   theme: {
     preset: Aura,
     options: {
       darkModeSelector: '.dark',
-      cssLayer: false,
     },
   },
-})
+});
+app.use(ConfirmationService);
 
-app.mount('#app')
+app.mount('#app');
