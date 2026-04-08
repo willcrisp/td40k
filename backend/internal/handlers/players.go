@@ -10,29 +10,6 @@ import (
 	"github.com/willcrisp/td40k/internal/models"
 )
 
-func HandleUpsertPlayer(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		ID       string `json:"id"`
-		Nickname string `json:"nickname"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		jsonError(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-	if body.ID == "" || body.Nickname == "" {
-		jsonError(w, "id and nickname required", http.StatusBadRequest)
-		return
-	}
-	if err := db.UpsertPlayer(models.Player{
-		ID: body.ID, Nickname: body.Nickname,
-	}); err != nil {
-		jsonError(w, "db error", http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-}
-
 func HandleGetPlayerGames(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "id")
 	callerID := mw.GetPlayerID(r)

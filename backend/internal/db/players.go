@@ -2,19 +2,50 @@ package db
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/willcrisp/td40k/internal/models"
 )
 
-func UpsertPlayer(p models.Player) error {
-	_, err := Pool.Exec(context.Background(), `
-		INSERT INTO players (id, nickname, last_seen)
-		VALUES ($1, $2, NOW())
-		ON CONFLICT (id) DO UPDATE
-			SET nickname  = EXCLUDED.nickname,
-			    last_seen = NOW()
-	`, p.ID, p.Nickname)
-	return err
+// CreatePlayer inserts a new player with a server-generated UUID and returns
+// the created player. Returns an error wrapping "username taken" if the
+// username already exists.
+func CreatePlayer(username, nickname, passwordHash string) (models.Player, error) {
+	var p models.Player
+	err := Pool.QueryRow(context.Background(), `
+		INSERT INTO players (id, username, nickname, password_hash)
+		VALUES (gen_random_uuid()::text, $1, $2, $3)
+		RETURNING id, username, nickname, created_at, last_seen
+	`, username, nickname, passwordHash).Scan(
+		&p.ID, &p.Username, &p.Nickname, &p.CreatedAt, &p.LastSeen,
+	)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return p, fmt.Errorf("username taken")
+		}
+		return p, err
+	}
+	return p, nil
+}
+
+// GetPlayerByUsername fetches the player row and its bcrypt hash for login.
+// Returns an error wrapping "not found" if no matching username exists.
+func GetPlayerByUsername(username string) (models.Player, string, error) {
+	var p models.Player
+	var hash string
+	err := Pool.QueryRow(context.Background(), `
+		SELECT id, username, nickname, password_hash, created_at, last_seen
+		FROM players
+		WHERE username = $1
+	`, username).Scan(
+		&p.ID, &p.Username, &p.Nickname, &hash, &p.CreatedAt, &p.LastSeen,
+	)
+	if err != nil {
+		return p, "", fmt.Errorf("not found")
+	}
+	return p, hash, nil
 }
 
 func GetPlayerGames(playerID string) (
@@ -80,4 +111,10 @@ func GetPlayerGames(playerID string) (
 	}
 
 	return owned, joined, nil
+}
+
+// isUniqueViolation returns true for PostgreSQL unique constraint errors (23505).
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

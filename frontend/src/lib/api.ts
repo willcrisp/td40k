@@ -1,20 +1,27 @@
 import axios from 'axios';
+import type { AuthResponse } from '@/types';
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const client = axios.create({ baseURL: BASE });
 
-// Inject X-Player-ID on every request
+// Inject Authorization header on every request
 client.interceptors.request.use((config) => {
-  const playerId = localStorage.getItem('player_id');
-  if (playerId) {
-    config.headers['X-Player-ID'] = playerId;
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 });
 
-export const apiUpsertPlayer = (id: string, nickname: string) =>
-  client.post('/api/players', { id, nickname });
+export const apiRegister = (data: {
+  username: string;
+  nickname: string;
+  password: string;
+}) => client.post<AuthResponse>('/api/auth/register', data);
+
+export const apiLogin = (data: { username: string; password: string }) =>
+  client.post<AuthResponse>('/api/auth/login', data);
 
 export const apiGetPlayerGames = (id: string) =>
   client.get(`/api/players/${id}/games`);
@@ -22,13 +29,10 @@ export const apiGetPlayerGames = (id: string) =>
 export const apiCreateRoom = (name: string) =>
   client.post<{ id: string }>('/api/rooms', { name });
 
-export const apiGetRoom = (id: string) =>
-  client.get(`/api/rooms/${id}`);
+export const apiGetRoom = (id: string) => client.get(`/api/rooms/${id}`);
 
-export const apiJoinRoom = (
-  roomId: string,
-  role: 'attacker' | 'defender'
-) => client.post(`/api/rooms/${roomId}/join`, { role });
+export const apiJoinRoom = (roomId: string, role: 'attacker' | 'defender') =>
+  client.post(`/api/rooms/${roomId}/join`, { role });
 
 export const apiStartGame = (roomId: string) =>
   client.post(`/api/rooms/${roomId}/start`);

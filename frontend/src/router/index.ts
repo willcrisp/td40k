@@ -7,6 +7,7 @@ import {
 import HomeView from '@/views/HomeView.vue';
 import LobbyView from '@/views/LobbyView.vue';
 import GameView from '@/views/GameView.vue';
+import LoginView from '@/views/LoginView.vue';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useRoomStore } from '@/stores/useRoomStore';
 
@@ -14,8 +15,14 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/auth',
+      component: LoginView,
+      beforeEnter: redirectIfAuthenticated,
+    },
+    {
       path: '/',
       component: HomeView,
+      beforeEnter: requirePlayer,
     },
     {
       path: '/lobby/:id',
@@ -30,13 +37,23 @@ const router = createRouter({
   ],
 });
 
+function redirectIfAuthenticated(
+  _to: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
+  next: NavigationGuardNext
+) {
+  const token = localStorage.getItem('token');
+  if (token) return next('/');
+  next();
+}
+
 function requirePlayer(
   _to: RouteLocationNormalized,
   _from: RouteLocationNormalized,
   next: NavigationGuardNext
 ) {
-  const player = usePlayerStore();
-  if (!player.playerId) return next('/');
+  const token = localStorage.getItem('token');
+  if (!token) return next('/auth');
   next();
 }
 
