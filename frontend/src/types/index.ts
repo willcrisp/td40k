@@ -101,3 +101,61 @@ export interface AuthResponse {
   nickname: string;
   is_admin: boolean;
 }
+
+export type UnitStatus = 'alive' | 'in_reserves' | 'dead';
+
+export type FootprintShape = 'round' | 'oval' | 'hull';
+
+export interface GameUnit {
+  id: string;
+  room_id: string;
+  faction_id: string;
+  datasheet_id: string;
+  model_name: string;
+  name_on_board: string | null;
+  model_count: number;
+  x: number;
+  y: number;
+  facing_degrees: number;
+  status: UnitStatus;
+  wounds: number;
+  owner_player_id: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UnitStats {
+  movement: number;
+  toughness: number;
+  save: number;
+  invulnerable_save?: number;
+  wounds: number;
+  leadership: number;
+  objective_control: number;
+}
+
+export interface Footprint {
+  x: number;
+  y: number;
+  has_base: boolean;
+  shape?: FootprintShape;
+}
+
+export interface GameUnitsUpdate {
+  event: 'game_units_updates';
+  payload: GameUnitsUpdatePayload;
+}
+
+export interface GameUnitsUpdatePayload {
+  room_id: string;
+  unit_id: string;
+  event_type: 'unit_placed' | 'unit_moved' | 'unit_removed';
+  x?: number;
+  y?: number;
+  facing_degrees?: number;
+  status?: UnitStatus;
+  wounds?: number;
+  model_count?: number;
+  owner_player_id?: string;
+}

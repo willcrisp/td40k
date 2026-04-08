@@ -1,0 +1,54 @@
+# Node / Bun
+node_modules/
+frontend/node_modules/
+*.log
+
+# Go
+vendor/
+go.mod
+go.sum
+
+# Build outputs
+dist/
+build/
+*.out
+*.a
+*.so
+
+# Docker
+.dockerignore
+docker-compose.yml
+docker-compose.dev.yml
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Package managers
+package-lock.json
+bun.lock
+
+# Database
+postgres_data/
+
+# Temporary files
+*.tmp
+*.bak

@@ -60,6 +60,20 @@ func main() {
 		r.Post("/api/rooms/{id}/phase/prev", handlers.HandlePhasePrev)
 		r.Post("/api/rooms/{id}/close", handlers.HandleCloseRoom)
 		r.Post("/api/wahapedia/sync", handlers.HandleSyncWahapedia)
+		r.Get("/api/wahapedia/datasheets", handlers.HandleGetDatasheets)
+		r.Get("/api/wahapedia/datasheets/{datasheetId}/models",
+			handlers.HandleGetDatasheetModels)
+		// Unit endpoints
+		r.Get("/api/rooms/{roomId}/units", handlers.HandleGetRoomUnits)
+		r.Post("/api/rooms/{roomId}/units", handlers.HandlePlaceUnit)
+		r.Patch("/api/rooms/{roomId}/units/{unitId}",
+			handlers.HandleMoveUnit)
+		r.Post("/api/rooms/{roomId}/units/{unitId}/wounds",
+			handlers.HandleWoundUnit)
+		r.Post("/api/rooms/{roomId}/units/{unitId}/status",
+			handlers.HandleUpdateUnitStatus)
+		r.Delete("/api/rooms/{roomId}/units/{unitId}",
+			handlers.HandleDeleteUnit)
 	})
 
 	port := os.Getenv("PORT")
@@ -74,7 +88,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
