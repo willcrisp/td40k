@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/willcrisp/td40k/internal/db"
 	"github.com/willcrisp/td40k/internal/middleware"
 	"github.com/willcrisp/td40k/internal/models"
@@ -1025,4 +1026,42 @@ func HandleSyncWahapedia(w http.ResponseWriter, r *http.Request) {
 		Changed:        true,
 		UpdatedSources: changed,
 	})
+}
+
+// HandleGetDatasheets returns all available datasheets for unit placement
+func HandleGetDatasheets(w http.ResponseWriter, r *http.Request) {
+	datasheets, err := db.GetAllDatasheets()
+	if err != nil {
+		jsonError(w, "failed to fetch datasheets", http.StatusInternalServerError)
+		return
+	}
+
+	if datasheets == nil {
+		datasheets = []models.WhDatasheet{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(datasheets)
+}
+
+// HandleGetDatasheetModels returns all models for a specific datasheet
+func HandleGetDatasheetModels(w http.ResponseWriter, r *http.Request) {
+	datasheetID := chi.URLParam(r, "datasheetId")
+	if datasheetID == "" {
+		jsonError(w, "datasheet_id required", http.StatusBadRequest)
+		return
+	}
+
+	dsModels, err := db.GetDatasheetModels(datasheetID)
+	if err != nil {
+		jsonError(w, "failed to fetch models", http.StatusInternalServerError)
+		return
+	}
+
+	if dsModels == nil {
+		dsModels = []models.WhDatasheetModel{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dsModels)
 }
