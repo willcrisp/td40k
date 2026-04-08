@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
-import Card from 'primevue/card';
 import { useRoomStore } from '@/stores/useRoomStore';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 
@@ -20,61 +19,68 @@ function isMe(id: string | null) {
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-6 mt-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Attacker -->
-    <Card
-      :class="[
-        'border-2 transition-colors',
-        isMe(attackerId) ? 'border-red-500' : 'border-transparent',
-      ]"
+    <div
+      class="role-card"
+      :class="{ 'role-card--selected': isMe(attackerId) }"
     >
-      <template #title>
-        <span class="text-red-400">⚔ Attacker</span>
-      </template>
-      <template #content>
-        <p class="text-sm text-surface-400 mb-4">
+      <div class="role-card-accent role-card-accent--attacker"></div>
+      <div class="role-card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-primary" style="font-size: 1.125rem">
+            Attacker
+          </h3>
+          <span
+            v-if="attackerId"
+            class="font-mono text-xs"
+            :class="isMe(attackerId) ? 'text-primary' : 'text-surface-variant'"
+          >
+            {{ isMe(attackerId) ? 'YOU' : 'TAKEN' }}
+          </span>
+        </div>
+        <p class="text-sm font-mono text-surface-variant mb-6">
           Controls the attacking force.
         </p>
-        <div v-if="attackerId">
-          <span class="text-green-400 text-sm">
-            {{ isMe(attackerId) ? '✅ You' : '✅ Taken' }}
-          </span>
-        </div>
         <Button
-          v-else
-          label="Choose Attacker"
-          severity="danger"
+          v-if="!attackerId"
+          label="Deploy as Attacker"
+          class="btn-tactical w-full"
           @click="emit('select', 'attacker')"
         />
-      </template>
-    </Card>
+      </div>
+    </div>
 
     <!-- Defender -->
-    <Card
-      :class="[
-        'border-2 transition-colors',
-        isMe(defenderId) ? 'border-blue-500' : 'border-transparent',
-      ]"
+    <div
+      class="role-card"
+      :class="{ 'role-card--selected': isMe(defenderId) }"
     >
-      <template #title>
-        <span class="text-blue-400">🛡 Defender</span>
-      </template>
-      <template #content>
-        <p class="text-sm text-surface-400 mb-4">
-          Controls the defending force.
-        </p>
-        <div v-if="defenderId">
-          <span class="text-green-400 text-sm">
-            {{ isMe(defenderId) ? '✅ You' : '✅ Taken' }}
+      <div class="role-card-accent role-card-accent--defender"></div>
+      <div class="role-card-body">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-secondary" style="font-size: 1.125rem">
+            Defender
+          </h3>
+          <span
+            v-if="defenderId"
+            class="font-mono text-xs"
+            :class="isMe(defenderId) ? 'text-secondary' : 'text-surface-variant'"
+          >
+            {{ isMe(defenderId) ? 'YOU' : 'TAKEN' }}
           </span>
         </div>
+        <p class="text-sm font-mono text-surface-variant mb-6">
+          Controls the defending force.
+        </p>
         <Button
-          v-else
-          label="Choose Defender"
-          severity="info"
+          v-if="!defenderId"
+          label="Deploy as Defender"
+          class="btn-tactical w-full"
+          style="background-color: var(--secondary-container) !important"
           @click="emit('select', 'defender')"
         />
-      </template>
-    </Card>
+      </div>
+    </div>
   </div>
 </template>

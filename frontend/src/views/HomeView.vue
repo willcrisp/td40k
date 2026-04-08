@@ -74,57 +74,45 @@ function handleLogout() {
 <template>
   <ConfirmDialog />
 
-  <div class="layout-terminal">
-    <!-- Header -->
-    <div class="flex items-start justify-between mb-8">
+  <!-- Header Bar -->
+  <header class="header-bar">
+    <span class="header-brand font-mono">TACTICAL TERMINAL</span>
+    <div class="flex items-center gap-4">
+      <Button
+        v-if="isAdmin"
+        icon="pi pi-refresh"
+        severity="info"
+        size="small"
+        rounded
+        :loading="syncingWahapedia"
+        @click="handleSyncWahapedia"
+        v-tooltip="'Refresh Wahapedia data'"
+      />
+      <button class="header-avatar" @click="handleLogout">
+        <i class="pi pi-user"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout-terminal layout-centered">
+    <!-- Hero -->
+    <div class="hero-row">
       <div>
-        <h1 class="text-3xl font-display text-primary">Game Tracker</h1>
-        <p class="text-sm font-mono text-surface-variant">
-          Status: Online // Sector 40K
+        <h1 class="hero-title font-display">Mission Command</h1>
+        <p class="hero-subtitle font-mono">
+          Strategic Deployment Oversight
         </p>
       </div>
-      <div class="flex items-center gap-4">
-        <Button
-          v-if="isAdmin"
-          icon="pi pi-refresh"
-          severity="info"
-          size="small"
-          rounded
-          :loading="syncingWahapedia"
-          @click="handleSyncWahapedia"
-          v-tooltip="'Refresh Wahapedia data'"
-        />
-        <div class="text-right">
-          <p class="text-xs font-mono text-tertiary">Logged In As</p>
-          <p class="text-sm font-display">{{ nickname || username }}</p>
-        </div>
-        <Button
-          label="Logout"
-          severity="secondary"
-          size="small"
-          class="font-mono"
-          @click="handleLogout"
-        />
-      </div>
+      <Button
+        label="+ New Game"
+        @click="showCreateModal = true"
+        class="btn-tactical"
+      />
     </div>
 
     <!-- Owned games -->
     <section class="section-gap">
-      <div
-        class="flex items-end justify-between mb-6 border-b border-ghost-border pb-2"
-      >
-        <div>
-          <h2 class="text-2xl font-display">My Games</h2>
-          <p class="text-sm font-mono text-surface-variant">
-            Games you are managing
-          </p>
-        </div>
-        <Button
-          label="+ New Game"
-          @click="showCreateModal = true"
-          class="btn-tactical"
-        />
-      </div>
+      <h2 class="section-heading font-mono">My Games</h2>
 
       <div v-if="loading" class="font-mono text-tertiary">
         Loading games...
@@ -132,7 +120,7 @@ function handleLogout() {
 
       <div
         v-else-if="ownedGames.length"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        class="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <OwnedGameCard
           v-for="game in ownedGames"
@@ -154,31 +142,19 @@ function handleLogout() {
 
     <!-- Joined games -->
     <section>
-      <div class="mb-6 border-b border-ghost-border pb-2">
-        <h2 class="text-2xl font-display">Joined Games</h2>
-        <p class="text-sm font-mono text-surface-variant">
-          Games where you are a player
-        </p>
-      </div>
+      <h2 class="section-heading font-mono">Joined Games</h2>
 
-      <div
-        v-if="joinedGames.length"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <JoinedGameCard
           v-for="game in joinedGames"
           :key="game.id"
           :game="game"
           @rejoin="handleRejoin"
         />
-      </div>
-      <div
-        v-else
-        class="panel-lowest p-6 border-l-4 border-outline-variant"
-      >
-        <p class="text-surface-variant font-mono">
-          You haven't joined any games yet.
-        </p>
+        <div class="join-placeholder">
+          <i class="pi pi-th-large join-placeholder-icon"></i>
+          <span class="font-mono">Join Existing Game</span>
+        </div>
       </div>
     </section>
   </div>

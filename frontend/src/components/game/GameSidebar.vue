@@ -2,182 +2,126 @@
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useWebSocketStore } from '@/stores/useWebSocketStore';
+import { useRoomStore } from '@/stores/useRoomStore';
 
 const ws = useWebSocketStore();
+const room = useRoomStore();
 const { connected } = storeToRefs(ws);
-const showHistory = ref(false);
+const { battleRound } = storeToRefs(room);
+
+const activeNav = ref('battlelog');
 
 const navItems = [
-  { icon: 'pi pi-wifi', label: 'CONNECTION', active: true },
-  { icon: 'pi pi-history', label: 'HISTORY', active: false, onClick: () => (showHistory.value = !showHistory.value) },
-  { icon: 'pi pi-box', label: 'LOGISTICS', active: false },
-  { icon: 'pi pi-bolt', label: 'ABILITIES', active: false },
-  { icon: 'pi pi-cog', label: 'SETTINGS', active: false },
-];
-
-const logEntries = [
-  { time: '14:32:01', text: 'Attacker moved units' },
-  { time: '14:34:45', text: 'Unit-043 deployed smoke' },
-  { time: '14:35:12', text: 'Terrain: Ruins (Obstacle)' },
+  { id: 'battlelog', icon: 'pi pi-video', label: 'BATTLELOG' },
+  { id: 'mission', icon: 'pi pi-file', label: 'MISSION' },
+  { id: 'stratagems', icon: 'pi pi-bolt', label: 'STRATAGEMS' },
+  { id: 'units', icon: 'pi pi-chart-line', label: 'UNIT_DATA' },
 ];
 </script>
 
 <template>
-  <aside class="game-sidebar panel-lowest riveted">
+  <aside class="game-sidebar">
     <!-- Sector Header -->
-    <div class="sidebar-header panel-low">
-      <div class="flex items-center justify-between mb-1">
-        <h2 class="font-display text-[11px] text-white opacity-80 uppercase tracking-widest">Active Game</h2>
-        <div
-          class="status-dot"
-          :class="connected ? 'status-dot--online' : 'status-dot--offline'"
-        />
-      </div>
-      <p class="text-[9px] font-mono" :class="connected ? 'text-primary' : 'text-on-surface-variant'">
-        {{ connected ? 'CONNECTION STABLE' : 'SIGNAL LOST' }}
-      </p>
+    <div class="sidebar-sector">
+      <span class="sector-label font-mono">SECTOR</span>
+      <span class="sector-number font-display">
+        {{ String(battleRound).padStart(2, '0') }}
+      </span>
     </div>
 
-    <!-- Navigation -->
+    <!-- Icon Nav -->
     <nav class="sidebar-nav">
       <button
         v-for="item in navItems"
-        :key="item.label"
-        class="nav-item"
-        :class="{ 'nav-item--active': item.active || (item.label === 'HISTORY' && showHistory) }"
-        @click="item.onClick ? item.onClick() : null"
+        :key="item.id"
+        class="sidebar-btn"
+        :class="{ 'sidebar-btn--active': activeNav === item.id }"
+        @click="activeNav = item.id"
       >
-        <i :class="item.icon" class="text-xs" />
-        <span class="font-display tracking-widest">{{ item.label }}</span>
+        <i :class="item.icon" class="sidebar-btn-icon"></i>
+        <span class="sidebar-btn-label font-mono">{{ item.label }}</span>
       </button>
     </nav>
-
-    <!-- Tactical Log Overlay/Panel -->
-    <div
-      v-if="showHistory"
-      class="tactical-log-panel panel-low border-t border-outline-variant"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <span class="font-display text-[10px] text-white opacity-60">TACTICAL HISTORY</span>
-        <button @click="showHistory = false" class="text-[10px] uppercase font-mono opacity-40 hover:opacity-100 cursor-pointer">
-          CLOSE
-        </button>
-      </div>
-      <div class="log-entries custom-scrollbar">
-        <div
-          v-for="entry in logEntries"
-          :key="entry.time"
-          class="log-entry"
-        >
-          <div class="flex items-baseline gap-2">
-            <span class="log-time font-mono text-[8px] text-surface-variant">[{{ entry.time }}]</span>
-            <span class="log-text font-mono text-[10px] text-on-surface">{{ entry.text }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
   </aside>
 </template>
 
 <style scoped>
 .game-sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: 80px;
+  min-width: 80px;
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  background-color: var(--surface-container-lowest);
+  border-right: 1px solid var(--ghost-border);
   z-index: 10;
+  padding-top: 0.5rem;
 }
 
 .sidebar-sector {
-  padding: 24px 20px;
-  margin-bottom: 2px;
-}
-
-.sector-title {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
+  padding: 0.75rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ghost-border);
+  width: 100%;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 0;
+.sector-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
 }
 
-.status-dot--online {
-  background: var(--tertiary);
-  box-shadow: 0 0 10px var(--tertiary-glow);
-}
-
-.status-dot--offline {
-  background: var(--primary);
-  box-shadow: 0 0 10px var(--primary-container);
+.sector-number {
+  font-size: 1.25rem;
+  color: var(--on-surface);
+  font-weight: 700;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: 12px 0;
+  align-items: center;
+  width: 100%;
+  gap: 2px;
 }
 
-.nav-item {
+.sidebar-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 14px 20px;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 0.25rem;
   border: none;
   background: transparent;
   color: var(--on-surface-variant);
-  font-size: 11px;
   cursor: pointer;
-  transition: all 0.2s steps(2);
-  text-align: left;
+  transition: all 0.15s;
 }
 
-.nav-item:hover {
+.sidebar-btn:hover {
   background: var(--surface-container-low);
   color: var(--on-surface);
 }
 
-.nav-item--active {
-  background: var(--surface-container-high);
-  color: var(--tertiary);
-  border-left: 4px solid var(--tertiary);
-  padding-left: 16px;
+.sidebar-btn--active {
+  background: var(--primary-container);
+  color: white;
 }
 
-.tactical-log-panel {
-  padding: 1rem;
-  margin-top: auto;
-  max-height: 200px;
-  display: flex;
-  flex-direction: column;
+.sidebar-btn-icon {
+  font-size: 1.125rem;
 }
 
-.log-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.log-entry {
-  line-height: 1.2;
-}
-
-.log-text {
-  text-transform: none; /* Already distilled to plain English */
-}
-
-/* Scrollbar refinement */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 2px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--outline-variant);
+.sidebar-btn-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 </style>
