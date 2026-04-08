@@ -28,6 +28,7 @@ These are non-negotiable. Do not deviate under any circumstances.
 | Backend    | gorilla/websocket                | v1       |
 | Backend    | google/uuid                      | v1       |
 | Frontend   | Vue (Composition API only)       | 3        |
+| Frontend   | uuid (client-side UUID)          | latest   |
 | Frontend   | Vite                             | 5        |
 | Frontend   | TypeScript                       | 5        |
 | Frontend   | Pinia                            | 3        |
@@ -56,8 +57,7 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   │   ├── middleware/
 │   │   │   └── player_auth.go         # Extracts X-Player-ID header → context
 │   │   ├── models/
-│   │   │   ├── models.go              # Domain structs: Player, Room, RoomEvent, RoomStatePayload
-│   │   │   └── unit.go                # Unit simulation: BaseUnit, UnitStats, BoardPosition
+│   │   │   └── models.go              # Domain structs: Player, Room, RoomEvent, RoomStatePayload
 │   │   ├── ws/
 │   │   │   ├── hub.go                 # Gorilla WebSocket hub: register/unregister/broadcast
 │   │   │   └── client.go              # Individual WebSocket client pump goroutines
@@ -207,6 +207,8 @@ Defined in `.env` (gitignored). `.env.example` must stay in sync.
 | `POSTGRES_USER`     | Docker   | `w40k`                               |
 | `POSTGRES_PASSWORD` | Docker   | `w40k`                               |
 | `POSTGRES_DB`       | Docker   | `w40k`                               |
+
+Note: `JWT_SECRET` has been removed. The application uses `X-Player-ID` header authentication instead.
 
 ---
 

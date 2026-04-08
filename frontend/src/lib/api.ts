@@ -1,27 +1,17 @@
 import axios from 'axios';
-import type { AuthResponse } from '@/types';
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const client = axios.create({ baseURL: BASE });
 
-// Inject Authorization header on every request
+// Inject X-Player-ID header on every request
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
+  const playerId = localStorage.getItem('player_id');
+  if (playerId) {
+    config.headers['X-Player-ID'] = playerId;
   }
   return config;
 });
-
-export const apiRegister = (data: {
-  username: string;
-  nickname: string;
-  password: string;
-}) => client.post<AuthResponse>('/api/auth/register', data);
-
-export const apiLogin = (data: { username: string; password: string }) =>
-  client.post<AuthResponse>('/api/auth/login', data);
 
 export const apiGetPlayerGames = (id: string) =>
   client.get(`/api/players/${id}/games`);

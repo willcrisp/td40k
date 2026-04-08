@@ -6,18 +6,15 @@ import Button from 'primevue/button';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useConfirm } from 'primevue/useconfirm';
 import { useGameListStore } from '@/stores/useGameListStore';
-import { usePlayerStore } from '@/stores/usePlayerStore';
 import CreateGameModal from '@/components/home/CreateGameModal.vue';
 import OwnedGameCard from '@/components/home/OwnedGameCard.vue';
 import JoinedGameCard from '@/components/home/JoinedGameCard.vue';
 
 const router = useRouter();
 const gameListStore = useGameListStore();
-const playerStore = usePlayerStore();
 const confirm = useConfirm();
 
 const { ownedGames, joinedGames, loading } = storeToRefs(gameListStore);
-const { nickname, username } = storeToRefs(playerStore);
 
 import { ref } from 'vue';
 const showCreateModal = ref(false);
@@ -51,11 +48,6 @@ function handleCloseGame(id: string) {
 function handleRejoin(id: string) {
   router.push(`/lobby/${id}`);
 }
-
-function handleLogout() {
-  playerStore.logout();
-  router.push('/auth');
-}
 </script>
 
 <template>
@@ -69,19 +61,6 @@ function handleLogout() {
         <p class="text-sm font-mono text-surface-variant">
           Status: Online // Sector 40K
         </p>
-      </div>
-      <div class="flex items-center gap-4">
-        <div class="text-right">
-          <p class="text-xs font-mono text-tertiary">Logged In As</p>
-          <p class="text-sm font-display">{{ nickname || username }}</p>
-        </div>
-        <Button
-          label="Logout"
-          severity="secondary"
-          size="small"
-          class="font-mono"
-          @click="handleLogout"
-        />
       </div>
     </div>
 

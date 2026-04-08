@@ -28,8 +28,12 @@ func HandleGetPlayerGames(w http.ResponseWriter, r *http.Request) {
 	if joined == nil {
 		joined = []models.JoinedGameSummary{}
 	}
-	json.NewEncoder(w).Encode(map[string]any{
-		"owned":  owned,
-		"joined": joined,
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(struct {
+		Owned  []models.OwnedGameSummary  `json:"owned"`
+		Joined []models.JoinedGameSummary `json:"joined"`
+	}{
+		Owned:  owned,
+		Joined: joined,
 	})
 }

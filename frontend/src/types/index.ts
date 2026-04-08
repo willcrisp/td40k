@@ -93,10 +93,3 @@ export const PHASE_NUMBERS: Record<Phase, number> = {
   charge: 4,
   fight: 5,
 };
-
-export interface AuthResponse {
-  token: string;
-  player_id: string;
-  username: string;
-  nickname: string;
-}

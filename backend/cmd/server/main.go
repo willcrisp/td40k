@@ -20,11 +20,6 @@ func main() {
 		log.Fatal("POSTGRES_DSN not set")
 	}
 
-	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
-	if len(jwtSecret) == 0 {
-		log.Fatal("JWT_SECRET not set")
-	}
-
 	if err := db.Init(dsn); err != nil {
 		log.Fatalf("db init: %v", err)
 	}
@@ -41,16 +36,12 @@ func main() {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(corsMiddleware)
 
-	// WebSocket (no auth — player identity irrelevant for broadcast)
+	// WebSocket (broadcast-only from server)
 	r.Get("/ws", ws.ServeWS(hub))
 
-	// Public auth endpoints
-	r.Post("/api/auth/register", handlers.HandleRegister)
-	r.Post("/api/auth/login", handlers.HandleLogin)
-
-	// Protected — requires valid JWT
+	// Protected — requires X-Player-ID header
 	r.Group(func(r chi.Router) {
-		r.Use(mw.RequireAuth(jwtSecret))
+		r.Use(mw.ExtractPlayerID)
 		r.Get("/api/players/{id}/games", handlers.HandleGetPlayerGames)
 		r.Post("/api/rooms", handlers.HandleCreateRoom)
 		r.Get("/api/rooms/{id}", handlers.HandleGetRoom)
@@ -59,7 +50,6 @@ func main() {
 		r.Post("/api/rooms/{id}/phase/next", handlers.HandlePhaseNext)
 		r.Post("/api/rooms/{id}/phase/prev", handlers.HandlePhasePrev)
 		r.Post("/api/rooms/{id}/close", handlers.HandleCloseRoom)
-		r.Post("/api/wahapedia/sync", handlers.HandleSyncWahapedia)
 	})
 
 	port := os.Getenv("PORT")
