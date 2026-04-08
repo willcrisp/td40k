@@ -115,12 +115,11 @@ func HandlePhaseNext(w http.ResponseWriter, r *http.Request) {
 	}
 	phase, activePlayer, round, gameOver := advancePhase(room)
 	status := "active"
-	var winner *string
 	if gameOver {
 		status = "finished"
 	}
 	if err := db.UpdateRoomPhase(
-		roomID, phase, activePlayer, round, winner, status,
+		roomID, phase, activePlayer, round, room.Winner, status,
 	); err != nil {
 		jsonError(w, "db error", http.StatusInternalServerError)
 		return

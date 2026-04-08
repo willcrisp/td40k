@@ -2,8 +2,6 @@
 import type { OwnedGameSummary } from '@/types';
 import { PHASE_LABELS } from '@/types';
 import Button from 'primevue/button';
-import Card from 'primevue/card';
-import Tag from 'primevue/tag';
 
 const props = defineProps<{ game: OwnedGameSummary }>();
 const emit = defineEmits<{
