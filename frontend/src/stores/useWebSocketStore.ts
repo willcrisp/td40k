@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { WsMessage } from '@/types';
+import type { WsMessage, GameUnitsUpdate } from '@/types';
 import { useRoomStore } from './useRoomStore';
+import { useUnitStore } from './useUnitStore';
 
 const WS_BASE =
   import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080';
@@ -41,10 +42,28 @@ export const useWebSocketStore = defineStore('websocket', () => {
 
     socket.onmessage = (event: MessageEvent) => {
       try {
-        const msg: WsMessage = JSON.parse(event.data);
+        const msg = JSON.parse(event.data);
         if (msg.event === 'room_state') {
           const roomStore = useRoomStore();
           roomStore.applyServerState(msg.payload);
+        } else if (msg.event === 'game_units_updates') {
+          const unitStore = useUnitStore();
+          const payload = msg.payload;
+
+          if (payload.event_type === 'unit_removed') {
+            unitStore.removeUnit(payload.unit_id);
+          } else {
+            // For unit_placed and unit_moved, we fetch the updated unit
+            // This will be handled by the component that cares about units
+            // For now, we just update local cache
+            unitStore.updateUnit(payload.unit_id, {
+              x: payload.x,
+              y: payload.y,
+              facing_degrees: payload.facing_degrees,
+              status: payload.status,
+              wounds: payload.wounds,
+            });
+          }
         }
       } catch {
         // ignore malformed messages

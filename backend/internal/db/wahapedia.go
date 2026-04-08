@@ -318,3 +318,64 @@ func SyncWahapediaData(
 
 	return tx.Commit(ctx)
 }
+
+// GetAllDatasheets returns all available Warhammer datasheets
+func GetAllDatasheets() ([]models.WhDatasheet, error) {
+	rows, err := Pool.Query(context.Background(), `
+		SELECT id, name, faction_id, source_id, legend, role, loadout,
+		       transport, virtual, leader_head, leader_footer, damaged_w,
+		       damaged_description, link
+		FROM wh_datasheets
+		ORDER BY faction_id, name
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var datasheets []models.WhDatasheet
+	for rows.Next() {
+		var ds models.WhDatasheet
+		if err := rows.Scan(
+			&ds.ID, &ds.Name, &ds.FactionID, &ds.SourceID, &ds.Legend,
+			&ds.Role, &ds.Loadout, &ds.Transport, &ds.Virtual,
+			&ds.LeaderHead, &ds.LeaderFooter, &ds.DamagedW,
+			&ds.DamagedDescription, &ds.Link,
+		); err != nil {
+			return nil, err
+		}
+		datasheets = append(datasheets, ds)
+	}
+	return datasheets, rows.Err()
+}
+
+// GetDatasheetModels returns all models for a specific datasheet
+func GetDatasheetModels(
+	datasheetID string,
+) ([]models.WhDatasheetModel, error) {
+	rows, err := Pool.Query(context.Background(), `
+		SELECT datasheet_id, name, m, t, sv, inv_sv, inv_sv_descr,
+		       w, ld, oc, base_size, base_size_descr
+		FROM wh_datasheet_models
+		WHERE datasheet_id = $1
+		ORDER BY name
+	`, datasheetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dsModels []models.WhDatasheetModel
+	for rows.Next() {
+		var m models.WhDatasheetModel
+		if err := rows.Scan(
+			&m.DatasheetID, &m.Name, &m.M, &m.T, &m.SV, &m.InvSV,
+			&m.InvSVDescr, &m.W, &m.LD, &m.OC, &m.BaseSize,
+			&m.BaseSizeDescr,
+		); err != nil {
+			return nil, err
+		}
+		dsModels = append(dsModels, m)
+	}
+	return dsModels, rows.Err()
+}
