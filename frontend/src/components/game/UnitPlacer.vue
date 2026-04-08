@@ -1,6 +1,26 @@
 <template>
   <div class="unit-placer">
-    <div v-if="!isPlacing" class="placer-form">
+    <!-- Tab bar -->
+    <div v-if="!isPlacing" class="tab-bar">
+      <button
+        :class="['tab-btn', { active: activeTab === 'datasheet' }]"
+        @click="activeTab = 'datasheet'"
+      >
+        Datasheets
+      </button>
+      <button
+        :class="['tab-btn', { active: activeTab === 'roster' }]"
+        @click="activeTab = 'roster'"
+      >
+        Roster
+        <span v-if="rosterStore.roster.length > 0" class="roster-count">
+          {{ rosterStore.roster.length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Datasheet tab -->
+    <div v-if="!isPlacing && activeTab === 'datasheet'" class="placer-form">
       <div class="form-group">
         <label>Datasheet</label>
         <Dropdown
@@ -89,7 +109,50 @@
       </div>
     </div>
 
-    <div v-else class="placing-instruction">
+    <!-- Roster tab -->
+    <div v-if="!isPlacing && activeTab === 'roster'" class="roster-panel">
+      <Button
+        label="Import List"
+        severity="secondary"
+        size="small"
+        @click="showImportModal = true"
+        class="import-btn"
+      />
+
+      <div v-if="rosterStore.roster.length === 0" class="roster-empty">
+        No roster imported yet. Click "Import List" to paste your ListForge
+        export.
+      </div>
+
+      <div v-else class="roster-list">
+        <div
+          v-for="entry in rosterStore.roster"
+          :key="entry.id || entry.datasheet_id"
+          class="roster-entry"
+          @click="placeFromRoster(entry)"
+        >
+          <div class="entry-name">
+            <span v-if="entry.quantity > 1" class="entry-qty">
+              {{ entry.quantity }}x
+            </span>
+            {{ entry.model_name }}
+          </div>
+          <span class="entry-pts">{{ entry.points }} pts</span>
+        </div>
+      </div>
+
+      <div v-if="rosterStore.roster.length > 0" class="roster-actions">
+        <Button
+          label="Clear Roster"
+          severity="danger"
+          size="small"
+          @click="clearRoster"
+        />
+      </div>
+    </div>
+
+    <!-- Placing instruction -->
+    <div v-if="isPlacing" class="placing-instruction">
       <div class="instruction-icon">🎯</div>
       <div class="instruction-text">
         Click on the board to place<br />
@@ -101,6 +164,12 @@
         class="p-button-secondary"
       />
     </div>
+
+    <RosterImportModal
+      v-if="showImportModal"
+      :room-id="roomId"
+      @close="showImportModal = false"
+    />
   </div>
 </template>
 
@@ -110,14 +179,20 @@ import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
 import { useUnitStore } from '@/stores/useUnitStore';
+import { useRosterStore } from '@/stores/useRosterStore';
 import {
   apiGetDatasheets,
   apiGetDatasheetModels,
   type WhDatasheet,
   type WhDatasheetModel,
 } from '@/lib/api';
+import type { RosterEntry } from '@/types';
+import RosterImportModal from './RosterImportModal.vue';
+
+const props = defineProps<{ roomId: string }>();
 
 const unitStore = useUnitStore();
+const rosterStore = useRosterStore();
 
 const datasheets = ref<WhDatasheet[]>([]);
 const models = ref<WhDatasheetModel[]>([]);
@@ -128,9 +203,10 @@ const modelCount = ref(1);
 const loadingDatasheets = ref(false);
 const loadingModels = ref(false);
 
-const isPlacing = computed(
-  () => unitStore.placingUnitType !== null
-);
+const activeTab = ref<'datasheet' | 'roster'>('datasheet');
+const showImportModal = ref(false);
+
+const isPlacing = computed(() => unitStore.placingUnitType !== null);
 
 const footprintComponent = computed(() => {
   if (!selectedModel.value) return 'div';
@@ -151,7 +227,7 @@ const footprintComponent = computed(() => {
   if (baseSize.includes('hull')) {
     return FootprintHull;
   }
-  return FootprintCircle; // default
+  return FootprintCircle;
 });
 
 onMounted(async () => {
@@ -164,6 +240,13 @@ onMounted(async () => {
   } finally {
     loadingDatasheets.value = false;
   }
+
+  // Load persisted roster for this room
+  if (props.roomId) {
+    await rosterStore.loadRoster(props.roomId).catch(() => {
+      // Non-fatal — roster may be empty
+    });
+  }
 });
 
 async function onDatasheetChange() {
@@ -175,9 +258,7 @@ async function onDatasheetChange() {
 
   loadingModels.value = true;
   try {
-    const { data } = await apiGetDatasheetModels(
-      selectedDatasheet.value
-    );
+    const { data } = await apiGetDatasheetModels(selectedDatasheet.value);
     models.value = data;
     selectedModel.value = data.length > 0 ? data[0] : null;
   } catch (err) {
@@ -191,9 +272,7 @@ async function onDatasheetChange() {
 function startPlacing() {
   if (!selectedDatasheet.value || !selectedModel.value) return;
 
-  const ds = datasheets.value.find(
-    (d) => d.id === selectedDatasheet.value
-  );
+  const ds = datasheets.value.find((d) => d.id === selectedDatasheet.value);
   if (!ds) return;
 
   unitStore.startPlacingUnit(
@@ -207,6 +286,20 @@ function startPlacing() {
 function cancelPlacing() {
   unitStore.cancelPlacing();
 }
+
+function placeFromRoster(entry: RosterEntry) {
+  unitStore.startPlacingUnit(
+    entry.datasheet_id,
+    entry.model_name,
+    entry.quantity,
+    entry.faction_id
+  );
+}
+
+async function clearRoster() {
+  if (!props.roomId) return;
+  await rosterStore.clearRoster(props.roomId);
+}
 </script>
 
 <style scoped>
@@ -215,6 +308,45 @@ function cancelPlacing() {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.roster-count {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 0 0.375rem;
+  font-size: 0.7rem;
 }
 
 .placer-form {
@@ -302,6 +434,69 @@ function cancelPlacing() {
   gap: 0.5rem;
 }
 
+.roster-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.import-btn {
+  align-self: flex-start;
+}
+
+.roster-empty {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  line-height: 1.5;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.roster-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.roster-entry:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.entry-name {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.entry-qty {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.entry-pts {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.roster-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .placing-instruction {
   display: flex;
   flex-direction: column;
@@ -335,14 +530,10 @@ function cancelPlacing() {
 </style>
 
 <!-- Footprint shape components -->
-<template>
-  <circle cx="50" cy="50" r="30" fill="rgba(100, 200, 255, 0.3)" stroke="rgba(100, 200, 255, 0.6)" stroke-width="2" />
-</template>
-
-<!-- We'll define these as separate components imported -->
 <script>
 const FootprintCircle = {
-  template: '<circle cx="50" cy="50" r="30" fill="rgba(100, 200, 255, 0.3)" stroke="rgba(100, 200, 255, 0.6)" stroke-width="2" />',
+  template:
+    '<circle cx="50" cy="50" r="30" fill="rgba(100, 200, 255, 0.3)" stroke="rgba(100, 200, 255, 0.6)" stroke-width="2" />',
 };
 
 const FootprintOval = {

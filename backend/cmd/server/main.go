@@ -74,6 +74,10 @@ func main() {
 			handlers.HandleUpdateUnitStatus)
 		r.Delete("/api/rooms/{roomId}/units/{unitId}",
 			handlers.HandleDeleteUnit)
+		// Roster endpoints
+		r.Post("/api/rooms/{roomId}/roster/import", handlers.HandleImportRoster)
+		r.Get("/api/rooms/{roomId}/roster", handlers.HandleGetRoster)
+		r.Delete("/api/rooms/{roomId}/roster", handlers.HandleClearRoster)
 	})
 
 	port := os.Getenv("PORT")

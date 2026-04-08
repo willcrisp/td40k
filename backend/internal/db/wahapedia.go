@@ -319,6 +319,66 @@ func SyncWahapediaData(
 	return tx.Commit(ctx)
 }
 
+// GetFactionByName returns the faction whose name case-insensitively matches
+// the given string. Falls back to a substring search if exact match fails.
+// Returns (nil, nil) when no faction is found.
+func GetFactionByName(name string) (*models.WhFaction, error) {
+	var f models.WhFaction
+	err := Pool.QueryRow(context.Background(),
+		`SELECT id, name, link FROM wh_factions WHERE lower(name) = lower($1)`,
+		name,
+	).Scan(&f.ID, &f.Name, &f.Link)
+	if err == nil {
+		return &f, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	// Substring fallback
+	err = Pool.QueryRow(context.Background(),
+		`SELECT id, name, link FROM wh_factions WHERE name ILIKE '%' || $1 || '%' LIMIT 1`,
+		name,
+	).Scan(&f.ID, &f.Name, &f.Link)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
+// GetDatasheetsByFaction returns all datasheets for a faction, ordered by name.
+func GetDatasheetsByFaction(factionID string) ([]models.WhDatasheet, error) {
+	rows, err := Pool.Query(context.Background(), `
+		SELECT id, name, faction_id, source_id, legend, role, loadout,
+		       transport, virtual, leader_head, leader_footer, damaged_w,
+		       damaged_description, link
+		FROM wh_datasheets
+		WHERE faction_id = $1
+		ORDER BY name
+	`, factionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var datasheets []models.WhDatasheet
+	for rows.Next() {
+		var ds models.WhDatasheet
+		if err := rows.Scan(
+			&ds.ID, &ds.Name, &ds.FactionID, &ds.SourceID, &ds.Legend,
+			&ds.Role, &ds.Loadout, &ds.Transport, &ds.Virtual,
+			&ds.LeaderHead, &ds.LeaderFooter, &ds.DamagedW,
+			&ds.DamagedDescription, &ds.Link,
+		); err != nil {
+			return nil, err
+		}
+		datasheets = append(datasheets, ds)
+	}
+	return datasheets, rows.Err()
+}
+
 // GetAllDatasheets returns all available Warhammer datasheets
 func GetAllDatasheets() ([]models.WhDatasheet, error) {
 	rows, err := Pool.Query(context.Background(), `

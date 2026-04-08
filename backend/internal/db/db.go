@@ -34,6 +34,9 @@ func RunMigrations() error {
 		"db/migrations/006_add_auth_to_players.sql",
 		"db/migrations/007_expand_wahapedia_tables.sql",
 		"db/migrations/008_add_admin_flag_to_players.sql",
+		"db/migrations/009_create_game_units.sql",
+		"db/migrations/010_add_game_units_trigger.sql",
+		"db/migrations/011_roster_import_support.sql",
 	}
 	for _, path := range migrations {
 		sql, err := os.ReadFile(path)

@@ -1,5 +1,10 @@
 import axios from 'axios';
-import type { AuthResponse, GameUnit } from '@/types';
+import type {
+  AuthResponse,
+  GameUnit,
+  RosterEntry,
+  ImportRosterResponse,
+} from '@/types';
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -145,3 +150,16 @@ export const apiGetDatasheetModels = (datasheetId: string) =>
   client.get<WhDatasheetModel[]>(
     `/api/wahapedia/datasheets/${datasheetId}/models`
   );
+
+// Roster endpoints
+export const apiImportRoster = (roomId: string, listforgeJson: unknown) =>
+  client.post<ImportRosterResponse>(
+    `/api/rooms/${roomId}/roster/import`,
+    listforgeJson
+  );
+
+export const apiGetRoster = (roomId: string) =>
+  client.get<RosterEntry[]>(`/api/rooms/${roomId}/roster`);
+
+export const apiClearRoster = (roomId: string) =>
+  client.delete(`/api/rooms/${roomId}/roster`);

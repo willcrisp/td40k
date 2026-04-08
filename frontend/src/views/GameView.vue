@@ -10,6 +10,7 @@ import BoardCanvas from '@/components/game/BoardCanvas.vue';
 import GameHUD from '@/components/game/GameHUD.vue';
 import GameSidebar from '@/components/game/GameSidebar.vue';
 import PhaseController from '@/components/game/PhaseController.vue';
+import UnitPlacer from '@/components/game/UnitPlacer.vue';
 
 const route = useRoute();
 const roomStore = useRoomStore();
@@ -36,6 +37,11 @@ onUnmounted(() => {
     <!-- Left Sidebar -->
     <GameSidebar />
 
+    <!-- Unit Placer Panel -->
+    <div class="unit-placer-panel">
+      <UnitPlacer :room-id="roomId" />
+    </div>
+
     <!-- Main Content Area -->
     <div class="game-main">
       <!-- Top Header + Phase Bar -->
@@ -59,6 +65,15 @@ onUnmounted(() => {
   height: 100vh;
   overflow: hidden;
   background-color: var(--surface-container-lowest);
+}
+
+.unit-placer-panel {
+  width: 240px;
+  min-width: 240px;
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--surface-container-lowest);
+  border-right: 1px solid var(--ghost-border);
 }
 
 .game-main {

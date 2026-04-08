@@ -159,3 +159,31 @@ export interface GameUnitsUpdatePayload {
   model_count?: number;
   owner_player_id?: string;
 }
+
+export interface RosterEntry {
+  id: string;
+  room_id: string;
+  player_id: string;
+  datasheet_id: string;
+  model_name: string;
+  quantity: number;
+  faction_id: string;
+  points: number;
+  created_at: string;
+}
+
+export interface MatchedUnit {
+  name: string;
+  datasheet_id: string;
+  faction_id: string;
+  quantity: number;
+  model_count: number;
+  points: number;
+}
+
+export interface ImportRosterResponse {
+  faction_name: string;
+  total_points: number;
+  matched: MatchedUnit[];
+  unmatched: string[];
+}
