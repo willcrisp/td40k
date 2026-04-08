@@ -1,36 +1,55 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
-import { apiUpsertPlayer } from '@/lib/api';
+import { ref, computed } from 'vue';
+import type { AuthResponse } from '@/types';
 
 export const usePlayerStore = defineStore('player', () => {
+  const token = ref<string>('');
   const playerId = ref<string>('');
+  const username = ref<string>('');
   const nickname = ref<string>('');
   const initialized = ref(false);
 
-  async function initPlayer() {
-    let id = localStorage.getItem('player_id');
-    if (!id) {
-      id = uuidv4();
-      localStorage.setItem('player_id', id);
-    }
-    playerId.value = id;
+  const isAuthenticated = computed(() => !!token.value);
 
-    const storedNick = localStorage.getItem('nickname') || '';
-    nickname.value = storedNick;
+  function init() {
+    token.value = localStorage.getItem('token') ?? '';
+    playerId.value = localStorage.getItem('player_id') ?? '';
+    username.value = localStorage.getItem('username') ?? '';
+    nickname.value = localStorage.getItem('nickname') ?? '';
     initialized.value = true;
-
-    // Only upsert if we have a nickname — HomeView prompts if not
-    if (storedNick) {
-      await apiUpsertPlayer(id, storedNick).catch(() => {});
-    }
   }
 
-  async function setNickname(nick: string) {
-    nickname.value = nick;
-    localStorage.setItem('nickname', nick);
-    await apiUpsertPlayer(playerId.value, nick);
+  function setAuth(data: AuthResponse) {
+    token.value = data.token;
+    playerId.value = data.player_id;
+    username.value = data.username;
+    nickname.value = data.nickname;
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('player_id', data.player_id);
+    localStorage.setItem('username', data.username);
+    localStorage.setItem('nickname', data.nickname);
   }
 
-  return { playerId, nickname, initialized, initPlayer, setNickname };
+  function logout() {
+    token.value = '';
+    playerId.value = '';
+    username.value = '';
+    nickname.value = '';
+    localStorage.removeItem('token');
+    localStorage.removeItem('player_id');
+    localStorage.removeItem('username');
+    localStorage.removeItem('nickname');
+  }
+
+  return {
+    token,
+    playerId,
+    username,
+    nickname,
+    initialized,
+    isAuthenticated,
+    init,
+    setAuth,
+    logout,
+  };
 });

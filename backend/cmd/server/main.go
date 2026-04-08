@@ -20,6 +20,11 @@ func main() {
 		log.Fatal("POSTGRES_DSN not set")
 	}
 
+	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+	if len(jwtSecret) == 0 {
+		log.Fatal("JWT_SECRET not set")
+	}
+
 	if err := db.Init(dsn); err != nil {
 		log.Fatalf("db init: %v", err)
 	}
@@ -36,15 +41,16 @@ func main() {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(corsMiddleware)
 
-	// WebSocket (no player auth — player_id via query param)
+	// WebSocket (no auth — player identity irrelevant for broadcast)
 	r.Get("/ws", ws.ServeWS(hub))
 
-	// Public
-	r.Post("/api/players", handlers.HandleUpsertPlayer)
+	// Public auth endpoints
+	r.Post("/api/auth/register", handlers.HandleRegister)
+	r.Post("/api/auth/login", handlers.HandleLogin)
 
-	// Protected
+	// Protected — requires valid JWT
 	r.Group(func(r chi.Router) {
-		r.Use(mw.RequirePlayerID)
+		r.Use(mw.RequireAuth(jwtSecret))
 		r.Get("/api/players/{id}/games", handlers.HandleGetPlayerGames)
 		r.Post("/api/rooms", handlers.HandleCreateRoom)
 		r.Get("/api/rooms/{id}", handlers.HandleGetRoom)
@@ -67,7 +73,7 @@ func main() {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Player-ID")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

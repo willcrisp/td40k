@@ -5,7 +5,7 @@ import { usePlayerStore } from '@/stores/usePlayerStore';
 const playerStore = usePlayerStore();
 
 onMounted(async () => {
-  await playerStore.initPlayer();
+  playerStore.init();
   // Ensure dark mode is applied to document
   document.documentElement.classList.add('dark');
 });
