@@ -22,6 +22,11 @@ down:
 logs:
     docker compose logs -f
 
+# Stop containers and delete the PostgreSQL volume
+kill:
+    @echo "☢️ Deleting PostgreSQL volume..."
+    docker compose down -v
+
 # Hard Reset: Destroy containers, WIPE THE DATABASE VOLUME, and rebuild
 reset:
     @echo "☢️ Wiping database and rebuilding..."

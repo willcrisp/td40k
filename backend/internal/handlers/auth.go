@@ -66,11 +66,12 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]any{
 		"token":     token,
 		"player_id": player.ID,
 		"username":  player.Username,
 		"nickname":  player.Nickname,
+		"is_admin":  player.IsAdmin,
 	})
 }
 
@@ -106,10 +107,11 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]any{
 		"token":     token,
 		"player_id": player.ID,
 		"username":  player.Username,
 		"nickname":  player.Nickname,
+		"is_admin":  player.IsAdmin,
 	})
 }

@@ -99,4 +99,5 @@ export interface AuthResponse {
   player_id: string;
   username: string;
   nickname: string;
+  is_admin: boolean;
 }

@@ -4,5 +4,8 @@
 TRUNCATE room_events, rooms, players;
 
 ALTER TABLE players
-  ADD COLUMN username      TEXT UNIQUE NOT NULL,
-  ADD COLUMN password_hash TEXT        NOT NULL;
+  ADD COLUMN username      TEXT UNIQUE NOT NULL DEFAULT 'temp',
+  ADD COLUMN password_hash TEXT        NOT NULL DEFAULT 'temp';
+
+ALTER TABLE players ALTER COLUMN username DROP DEFAULT;
+ALTER TABLE players ALTER COLUMN password_hash DROP DEFAULT;

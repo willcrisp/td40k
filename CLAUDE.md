@@ -27,6 +27,8 @@ These are non-negotiable. Do not deviate under any circumstances.
 | Backend    | pgx (PostgreSQL driver)          | v5       |
 | Backend    | gorilla/websocket                | v1       |
 | Backend    | google/uuid                      | v1       |
+| Backend    | golang-jwt/jwt                   | v5       |
+| Backend    | golang.org/x/crypto/bcrypt      | latest   |
 | Frontend   | Vue (Composition API only)       | 3        |
 | Frontend   | Vite                             | 5        |
 | Frontend   | TypeScript                       | 5        |
@@ -49,15 +51,20 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   │   ├── db/
 │   │   │   ├── db.go                  # pgxpool init & migration runner
 │   │   │   ├── players.go             # Player CRUD queries
-│   │   │   └── rooms.go               # Room CRUD queries
+│   │   │   ├── rooms.go               # Room CRUD queries
+│   │   │   └── wahapedia.go           # Warhammer datasheet/faction queries
 │   │   ├── handlers/
+│   │   │   ├── auth.go                # Register/Login with JWT token issuance
 │   │   │   ├── players.go             # HTTP handlers for player endpoints
-│   │   │   └── rooms.go               # HTTP handlers for room/game lifecycle
+│   │   │   ├── rooms.go               # HTTP handlers for room/game lifecycle
+│   │   │   └── wahapedia.go           # Warhammer CSV sync from Wahapedia.ru
 │   │   ├── middleware/
-│   │   │   └── player_auth.go         # Extracts X-Player-ID header → context
+│   │   │   └── player_auth.go         # JWT token verification & context injection
 │   │   ├── models/
 │   │   │   ├── models.go              # Domain structs: Player, Room, RoomEvent, RoomStatePayload
-│   │   │   └── unit.go                # Unit simulation: BaseUnit, UnitStats, BoardPosition
+│   │   │   ├── unit.go                # Unit simulation: BaseUnit, UnitStats, BoardPosition
+│   │   │   ├── wahapedia.go           # Warhammer models: WhFaction, WhDatasheet, WhWeapon, etc.
+│   │   │   └── units/                 # Individual unit types (Space Marine, Rhino, etc.)
 │   │   ├── ws/
 │   │   │   ├── hub.go                 # Gorilla WebSocket hub: register/unregister/broadcast
 │   │   │   └── client.go              # Individual WebSocket client pump goroutines
@@ -150,6 +157,23 @@ Key principle: **clients never push state, only pull it via WebSocket broadcasts
 
 ---
 
+## Authentication Flow
+
+Players authenticate via username/password at `/api/auth/register` or `/api/auth/login`. Both endpoints return a JWT token with 7-day expiry. The token must be sent in the `Authorization: Bearer <token>` header on all protected endpoints.
+
+**Token Payload:**
+```json
+{
+  "player_id": "uuid",
+  "exp": 1234567890,
+  "iat": 1234567890
+}
+```
+
+The middleware extracts the player ID and stores it in `r.Context()` for handlers to access via `context.Value(key)`.
+
+---
+
 ## Naming Conventions
 
 ### Go
@@ -173,7 +197,8 @@ Key principle: **clients never push state, only pull it via WebSocket broadcasts
 - All responses are `application/json`
 - Success: `200 OK` or `201 Created`
 - Errors: `{ "error": "human readable message" }` with appropriate 4xx/5xx status
-- Authentication: `X-Player-ID` header (UUID) on every request. Middleware (`player_auth.go`) extracts it to `context.Context`.
+- Authentication: JWT token in `Authorization: Bearer <token>` header on protected endpoints. Middleware (`player_auth.go`) verifies and injects player ID to `context.Context`.
+- Public endpoints: `/api/auth/register`, `/api/auth/login`, `/ws` (WebSocket broadcast)
 
 ---
 
@@ -194,6 +219,27 @@ Up to 5 battle rounds. The GM controls phase advancement (`PhaseNext` / `PhasePr
 
 ---
 
+## Warhammer Data (Wahapedia Integration)
+
+The app syncs Warhammer 40K unit datasheets from **Wahapedia.ru** via CSV download:
+
+- **Endpoint:** `POST /api/wahapedia/sync` (protected, JWT required)
+- **Source:** `https://wahapedia.ru/wh40k10ed/data/` (pipe-delimited CSVs)
+- **Datasets synced:**
+  - Factions (armies)
+  - Datasheets (unit profiles)
+  - Datasheet Models (individual unit stats)
+  - Datasheet Weapons (weapon profiles)
+  - Datasheet Abilities (special rules)
+
+**Change Detection:** SHA256 hashes are stored per CSV to avoid redundant syncs. Sync only proceeds if at least one hash differs.
+
+**Data Storage:** All Warhammer data persists to PostgreSQL tables created by migrations. The sync is idempotent—re-running replaces old data with fresh CSV entries.
+
+**Schema:** See `internal/models/wahapedia.go` for struct definitions (WhFaction, WhDatasheet, WhDatasheetModel, WhDatasheetWeapon, WhDatasheetAbility).
+
+---
+
 ## Environment Variables
 
 Defined in `.env` (gitignored). `.env.example` must stay in sync.
@@ -202,6 +248,7 @@ Defined in `.env` (gitignored). `.env.example` must stay in sync.
 |---------------------|----------|--------------------------------------|
 | `POSTGRES_DSN`      | Backend  | `postgres://w40k:w40k@db:5432/w40k`  |
 | `PORT`              | Backend  | `8080`                               |
+| `JWT_SECRET`        | Backend  | Base64-encoded 32-byte key (run `openssl rand -base64 32`) |
 | `VITE_API_BASE_URL` | Frontend | `http://localhost:8080`              |
 | `VITE_WS_BASE_URL`  | Frontend | `ws://localhost:8080`                |
 | `POSTGRES_USER`     | Docker   | `w40k`                               |
@@ -285,4 +332,7 @@ When adding tests in future: use **Vitest + Vue Test Utils** for the frontend an
 - **Do not write ad-hoc CSS** for anything PrimeVue already provides (layout, spacing, color tokens).
 - **Do not use `any` in TypeScript.** If types feel complex, model them properly in `types/index.ts`.
 - **Do not forget `go mod tidy`** after adding Go dependencies. The Docker build will fail if `go.sum` is out of sync.
+- **Do not commit `.env` to git.** Keep `.env.example` synced but never track actual secrets.
+- **JWT tokens are time-limited.** Implement refresh token logic on the frontend if longer sessions are needed (currently hardcoded to 7 days).
 - When the Postgres trigger fires, it sends the entire room row as JSON. Ensure `RoomStatePayload` in `models/models.go` stays aligned with the trigger's JSON output.
+- **Wahapedia sync is a protected endpoint.** Only authenticated players can trigger data refresh. Do not expose it to unauthenticated users.

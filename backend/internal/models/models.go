@@ -6,6 +6,7 @@ type Player struct {
 	ID        string    `json:"id"`
 	Username  string    `json:"username"`
 	Nickname  string    `json:"nickname"`
+	IsAdmin   bool      `json:"is_admin"`
 	CreatedAt time.Time `json:"created_at"`
 	LastSeen  time.Time `json:"last_seen"`
 }

@@ -10,6 +10,7 @@ import { usePlayerStore } from '@/stores/usePlayerStore';
 import CreateGameModal from '@/components/home/CreateGameModal.vue';
 import OwnedGameCard from '@/components/home/OwnedGameCard.vue';
 import JoinedGameCard from '@/components/home/JoinedGameCard.vue';
+import { apiSyncWahapedia } from '@/lib/api';
 
 const router = useRouter();
 const gameListStore = useGameListStore();
@@ -17,14 +18,26 @@ const playerStore = usePlayerStore();
 const confirm = useConfirm();
 
 const { ownedGames, joinedGames, loading } = storeToRefs(gameListStore);
-const { nickname, username } = storeToRefs(playerStore);
+const { nickname, username, isAdmin } = storeToRefs(playerStore);
 
 import { ref } from 'vue';
 const showCreateModal = ref(false);
+const syncingWahapedia = ref(false);
 
 onMounted(async () => {
   await gameListStore.fetchGames();
 });
+
+async function handleSyncWahapedia() {
+  syncingWahapedia.value = true;
+  try {
+    await apiSyncWahapedia();
+  } catch (error) {
+    console.error('Failed to sync Wahapedia data', error);
+  } finally {
+    syncingWahapedia.value = false;
+  }
+}
 
 async function handleCreate(name: string) {
   showCreateModal.value = false;
@@ -71,6 +84,16 @@ function handleLogout() {
         </p>
       </div>
       <div class="flex items-center gap-4">
+        <Button
+          v-if="isAdmin"
+          icon="pi pi-refresh"
+          severity="info"
+          size="small"
+          rounded
+          :loading="syncingWahapedia"
+          @click="handleSyncWahapedia"
+          v-tooltip="'Refresh Wahapedia data'"
+        />
         <div class="text-right">
           <p class="text-xs font-mono text-tertiary">Logged In As</p>
           <p class="text-sm font-display">{{ nickname || username }}</p>

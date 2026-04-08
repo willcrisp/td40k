@@ -32,6 +32,8 @@ func RunMigrations() error {
 		"db/migrations/004_create_triggers.sql",
 		"db/migrations/005_create_wahapedia_tables.sql",
 		"db/migrations/006_add_auth_to_players.sql",
+		"db/migrations/007_expand_wahapedia_tables.sql",
+		"db/migrations/008_add_admin_flag_to_players.sql",
 	}
 	for _, path := range migrations {
 		sql, err := os.ReadFile(path)

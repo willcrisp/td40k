@@ -15,11 +15,11 @@ import (
 func CreatePlayer(username, nickname, passwordHash string) (models.Player, error) {
 	var p models.Player
 	err := Pool.QueryRow(context.Background(), `
-		INSERT INTO players (id, username, nickname, password_hash)
-		VALUES (gen_random_uuid()::text, $1, $2, $3)
-		RETURNING id, username, nickname, created_at, last_seen
+		INSERT INTO players (id, username, nickname, password_hash, is_admin)
+		VALUES (gen_random_uuid()::text, $1, $2, $3, false)
+		RETURNING id, username, nickname, is_admin, created_at, last_seen
 	`, username, nickname, passwordHash).Scan(
-		&p.ID, &p.Username, &p.Nickname, &p.CreatedAt, &p.LastSeen,
+		&p.ID, &p.Username, &p.Nickname, &p.IsAdmin, &p.CreatedAt, &p.LastSeen,
 	)
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -36,16 +36,32 @@ func GetPlayerByUsername(username string) (models.Player, string, error) {
 	var p models.Player
 	var hash string
 	err := Pool.QueryRow(context.Background(), `
-		SELECT id, username, nickname, password_hash, created_at, last_seen
+		SELECT id, username, nickname, is_admin, password_hash, created_at, last_seen
 		FROM players
 		WHERE username = $1
 	`, username).Scan(
-		&p.ID, &p.Username, &p.Nickname, &hash, &p.CreatedAt, &p.LastSeen,
+		&p.ID, &p.Username, &p.Nickname, &p.IsAdmin, &hash, &p.CreatedAt, &p.LastSeen,
 	)
 	if err != nil {
 		return p, "", fmt.Errorf("not found")
 	}
 	return p, hash, nil
+}
+
+// GetPlayerByID fetches a player by UUID.
+func GetPlayerByID(playerID string) (models.Player, error) {
+	var p models.Player
+	err := Pool.QueryRow(context.Background(), `
+		SELECT id, username, nickname, is_admin, created_at, last_seen
+		FROM players
+		WHERE id = $1
+	`, playerID).Scan(
+		&p.ID, &p.Username, &p.Nickname, &p.IsAdmin, &p.CreatedAt, &p.LastSeen,
+	)
+	if err != nil {
+		return p, fmt.Errorf("not found")
+	}
+	return p, nil
 }
 
 func GetPlayerGames(playerID string) (

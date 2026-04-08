@@ -45,3 +45,6 @@ export const apiPhasePrev = (roomId: string) =>
 
 export const apiCloseRoom = (roomId: string) =>
   client.post(`/api/rooms/${roomId}/close`);
+
+export const apiSyncWahapedia = () =>
+  client.post('/api/wahapedia/sync');

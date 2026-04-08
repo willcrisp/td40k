@@ -5,16 +5,21 @@ services:
     image: postgres:16-alpine
     container_name: postgres_db
     restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_USER: appuser
-      POSTGRES_PASSWORD: apppassword
-      POSTGRES_DB: counterdb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U appuser -d counterdb"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,9 +30,11 @@ services:
       dockerfile: backend/Dockerfile
     container_name: go_backend
     restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_DSN: postgres://appuser:apppassword@db:5432/counterdb?sslmode=disable
-      PORT: 8080
+      POSTGRES_DSN: ${POSTGRES_DSN}
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8080:8080"
     depends_on:
@@ -40,6 +47,10 @@ services:
       dockerfile: Dockerfile
     container_name: vue_frontend
     restart: unless-stopped
+    env_file: .env
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_WS_BASE_URL: ${VITE_WS_BASE_URL}
     ports:
       - "3000:80"
     depends_on:
