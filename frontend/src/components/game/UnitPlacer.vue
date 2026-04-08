@@ -530,7 +530,7 @@ async function clearRoster() {
 </style>
 
 <!-- Footprint shape components -->
-<script>
+<script lang="ts">
 const FootprintCircle = {
   template:
     '<circle cx="50" cy="50" r="30" fill="rgba(100, 200, 255, 0.3)" stroke="rgba(100, 200, 255, 0.6)" stroke-width="2" />',
