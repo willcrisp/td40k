@@ -52,11 +52,13 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   │   │   ├── db.go                  # pgxpool init & migration runner
 │   │   │   ├── players.go             # Player CRUD queries
 │   │   │   ├── rooms.go               # Room CRUD queries
+│   │   │   ├── units.go               # GameUnit CRUD queries
 │   │   │   └── wahapedia.go           # Warhammer datasheet/faction queries
 │   │   ├── handlers/
 │   │   │   ├── auth.go                # Register/Login with JWT token issuance
 │   │   │   ├── players.go             # HTTP handlers for player endpoints
 │   │   │   ├── rooms.go               # HTTP handlers for room/game lifecycle
+│   │   │   ├── units.go               # HTTP handlers for unit placement/state
 │   │   │   └── wahapedia.go           # Warhammer CSV sync from Wahapedia.ru
 │   │   ├── middleware/
 │   │   │   └── player_auth.go         # JWT token verification & context injection
@@ -83,8 +85,10 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   │   │   ├── useRoomStore.ts        # Active room state, roles, phase
 │   │   │   ├── useGameListStore.ts    # Owned & joined game listings
 │   │   │   ├── useBoardStore.ts       # Board/canvas unit state
+│   │   │   ├── useUnitStore.ts        # Unit placement, selection, inspection
 │   │   │   └── useWebSocketStore.ts   # Singleton WebSocket with auto-reconnect
 │   │   ├── views/
+│   │   │   ├── LoginView.vue          # Register/login form
 │   │   │   ├── HomeView.vue           # Game list, create/join
 │   │   │   ├── LobbyView.vue          # Role selection (Attacker/Defender/GM)
 │   │   │   └── GameView.vue           # Active game with board canvas
@@ -98,10 +102,13 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   │   │   │   └── LobbyStatus.vue
 │   │   │   └── game/
 │   │   │       ├── BoardCanvas.vue    # HTML canvas rendering
+│   │   │       ├── GameHUD.vue        # Main HUD layout
+│   │   │       ├── GameSidebar.vue    # Side panel for unit tools
 │   │   │       ├── PhaseBar.vue       # Visual phase indicator
-│   │   │       ├── PhaseController.vue
-│   │   │       ├── RoundTracker.vue
-│   │   │       └── GameHUD.vue
+│   │   │       ├── PhaseController.vue # Phase advancement controls
+│   │   │       ├── RoundTracker.vue   # Round counter
+│   │   │       ├── UnitInspector.vue  # Unit stats panel
+│   │   │       └── UnitPlacer.vue     # Unit placement interface
 │   │   ├── composables/
 │   │   │   └── useBoardControls.ts    # Canvas interaction logic
 │   │   ├── types/index.ts             # All shared TypeScript types/interfaces
@@ -114,17 +121,25 @@ These are non-negotiable. Do not deviate under any circumstances.
 │   ├── Dockerfile                     # Bun builder → nginx
 │   └── Dockerfile.dev                 # Bun dev server (volume-mounted src)
 ├── db/migrations/
-│   ├── 001_create_players.sql
-│   ├── 002_create_rooms.sql
-│   ├── 003_create_room_events.sql
-│   └── 004_create_triggers.sql        # set_updated_at + notify_room_update via pg_notify
-├── implementationPlans/               # Reference docs 000–010 + design system
+│   ├── 001_create_players.sql         # players table: uuid, username, password_hash
+│   ├── 002_create_rooms.sql           # rooms table: uuid, status, owner_id, roles
+│   ├── 003_create_room_events.sql     # room_events table: history of game actions
+│   ├── 004_create_triggers.sql        # set_updated_at + notify_room_update via pg_notify
+│   ├── 005_create_wahapedia_tables.sql # wh_factions, wh_datasheets, etc.
+│   ├── 006_add_auth_to_players.sql    # Add username/password columns
+│   ├── 007_expand_wahapedia_tables.sql # Complete Warhammer 40K datasheet schema
+│   ├── 008_add_admin_flag_to_players.sql # admin boolean flag
+│   ├── 009_create_game_units.sql      # game_units table for unit placement
+│   └── 010_add_game_units_trigger.sql # Trigger to notify on game_units changes
 ├── docker-compose.yml
 ├── docker-compose.dev.yml             # Overlay: Vite HMR dev server
 ├── justfile                           # Task automation (see Key Commands)
+├── .env.example                       # Template for environment variables
+├── .claudeignore                      # Files/dirs excluded from Claude context
 ├── agents.md                          # Original agent instructions
 ├── architecture.md                    # High-level design reference
-└── README.md
+├── README.md
+└── skills-lock.json                   # Claude Code skills configuration
 ```
 
 ---
