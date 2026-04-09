@@ -66,11 +66,7 @@ blueprint/
 │   ├── lib/api.ts                     # Axios client + JWT interceptor + 401 handler + all api* functions
 │   └── types/index.ts                 # AuthResponse, CounterState, Note, NoteEvent, WsMessage, CounterUpdatePayload
 ├── db/migrations/
-│   ├── 001_create_players.sql
-│   ├── 002_create_counter.sql
-│   ├── 003_create_triggers.sql        # counter trigger → pg_notify
-│   ├── 004_create_notes.sql           # notes table + trigger → pg_notify
-│   └── 005_add_admin_to_players.sql   # is_admin boolean column
+│   └── 001_schema.sql                 # Complete initial schema: all tables, indexes, triggers
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
 └── justfile
@@ -167,7 +163,7 @@ just reset    # Wipe DB volume + rebuild from scratch
 
 Notes is the template for a collection. Counter is the template for a scalar. To add a new resource:
 
-1. **Migration** — add `NNN_description.sql` in `db/migrations/` with table + `pg_notify` trigger. Never modify existing files.
+1. **Migration** — add `002_description.sql` in `db/migrations/` with your new table + `pg_notify` trigger. Never modify `001_schema.sql`.
 2. **DB layer** — add `backend/internal/db/yourresource.go` with List/Create/Delete functions.
 3. **Model** — add your struct and a `YourEvent` struct (with `op` field for mutations) to `models/models.go`.
 4. **Handler** — add `backend/internal/handlers/yourresource.go`, wire routes in `main.go`.

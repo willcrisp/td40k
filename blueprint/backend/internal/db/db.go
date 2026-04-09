@@ -24,11 +24,7 @@ func Init(dsn string) error {
 }
 
 var migrations = []string{
-	"db/migrations/001_create_players.sql",
-	"db/migrations/002_create_counter.sql",
-	"db/migrations/003_create_triggers.sql",
-	"db/migrations/004_create_notes.sql",
-	"db/migrations/005_add_admin_to_players.sql",
+	"db/migrations/001_schema.sql",
 }
 
 func RunMigrations() error {
