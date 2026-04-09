@@ -2,8 +2,8 @@
 -- Initial schema
 -- =============================================================================
 
--- Players ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS players (
+-- Users -----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
     id            TEXT PRIMARY KEY,
     username      TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
@@ -22,12 +22,12 @@ INSERT INTO counter (id, value) VALUES (1, 0) ON CONFLICT DO NOTHING;
 -- Notes -----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notes (
     id         TEXT PRIMARY KEY,
-    player_id  TEXT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content    TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_notes_player  ON notes(player_id);
+CREATE INDEX IF NOT EXISTS idx_notes_user    ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_created ON notes(created_at DESC);
 
 -- Triggers --------------------------------------------------------------
@@ -63,8 +63,8 @@ BEGIN
         PERFORM pg_notify('notes_updates', json_build_object(
             'op',         'insert',
             'id',         NEW.id,
-            'player_id',  NEW.player_id,
-            'username',   (SELECT username FROM players WHERE id = NEW.player_id),
+            'user_id',    NEW.user_id,
+            'username',   (SELECT username FROM users WHERE id = NEW.user_id),
             'content',    NEW.content,
             'created_at', NEW.created_at
         )::text);

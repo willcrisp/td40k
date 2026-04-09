@@ -37,10 +37,10 @@ export const useWebSocketStore = defineStore("websocket", () => {
         } else if (msg.event === "notes_update") {
           const p = msg.payload as NoteEvent;
           const notesStore = useNotesStore();
-          if (p.op === "insert" && p.player_id && p.content && p.created_at) {
+          if (p.op === "insert" && p.user_id && p.content && p.created_at) {
             notesStore.applyInsert({
               id: p.id,
-              player_id: p.player_id,
+              user_id: p.user_id,
               username: p.username ?? "",
               content: p.content,
               created_at: p.created_at,

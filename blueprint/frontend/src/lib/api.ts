@@ -22,7 +22,7 @@ client.interceptors.response.use(
       ?.status;
     if (status === 401) {
       localStorage.removeItem("token");
-      localStorage.removeItem("player_id");
+      localStorage.removeItem("user_id");
       localStorage.removeItem("username");
       localStorage.removeItem("is_admin");
       window.location.href = "/auth";

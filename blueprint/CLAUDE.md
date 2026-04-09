@@ -35,7 +35,7 @@ blueprint/
 │   └── internal/
 │       ├── db/
 │       │   ├── db.go                  # pgxpool init & migration runner
-│       │   ├── players.go             # Player CRUD (CreatePlayer, GetPlayerByUsername)
+│       │   ├── users.go               # User CRUD (CreateUser, GetUserByUsername)
 │       │   ├── counter.go             # GetCounter, IncrementCounter
 │       │   └── notes.go               # ListNotes, CreateNote, DeleteNote
 │       ├── handlers/
@@ -43,9 +43,9 @@ blueprint/
 │       │   ├── counter.go             # HandleGetCounter, HandleIncrementCounter
 │       │   └── notes.go               # HandleListNotes, HandleCreateNote, HandleDeleteNote
 │       ├── middleware/
-│       │   └── player_auth.go         # RequireAuth, GetPlayerID, RequireAdmin, WithAdmin
+│       │   └── user_auth.go           # RequireAuth, GetUserID, RequireAdmin, WithAdmin
 │       ├── models/
-│       │   └── models.go              # Player, CounterState, Note, NoteEvent, WsMessage
+│       │   └── models.go              # User, CounterState, Note, NoteEvent, WsMessage
 │       ├── ws/
 │       │   ├── hub.go                 # Gorilla WebSocket hub: broadcast to all clients
 │       │   └── client.go              # Per-client writePump / readPump goroutines
@@ -53,10 +53,10 @@ blueprint/
 │           └── listener.go            # LISTEN counter_updates + notes_updates → hub.Broadcast
 ├── frontend/src/
 │   ├── main.ts                        # Pinia + PrimeVue (Aura) + ToastService + Router
-│   ├── App.vue                        # Root: <Toast />, <RouterView />, playerStore.init()
-│   ├── router/index.ts                # /auth (redirectIfAuthenticated), / (requirePlayer)
+│   ├── App.vue                        # Root: <Toast />, <RouterView />, userStore.init()
+│   ├── router/index.ts                # /auth (redirectIfAuthenticated), / (requireAuth)
 │   ├── stores/
-│   │   ├── usePlayerStore.ts          # JWT + isAdmin localStorage persistence
+│   │   ├── useUserStore.ts            # JWT + isAdmin localStorage persistence
 │   │   ├── useCounterStore.ts         # value, fetchCounter(), increment(), applyUpdate()
 │   │   ├── useNotesStore.ts           # notes[], fetchNotes(), createNote(), deleteNote(), applyInsert/Delete()
 │   │   └── useWebSocketStore.ts       # WS singleton, exponential backoff, routes events → stores
@@ -110,7 +110,7 @@ Same pattern for counter (`counter_updates` channel) and for deletions (`op: "de
 | POST | /api/notes | Yes | HandleCreateNote |
 | DELETE | /api/notes/{id} | Yes | HandleDeleteNote (own notes only) |
 
-Auth: `Authorization: Bearer <token>`. JWT payload: `{"player_id": "uuid", "exp": ...}`.
+Auth: `Authorization: Bearer <token>`. JWT payload: `{"user_id": "uuid", "exp": ...}`.
 
 On 401 the Axios interceptor clears localStorage and redirects to `/auth` automatically.
 
@@ -121,7 +121,7 @@ On 401 the Axios interceptor clears localStorage and redirects to `/auth` automa
 | Event | Direction | Payload |
 |-------|-----------|---------|
 | `counter_update` | Server → Client | `{ value: number }` |
-| `notes_update` | Server → Client | `{ op: "insert", id, player_id, username, content, created_at }` or `{ op: "delete", id }` |
+| `notes_update` | Server → Client | `{ op: "insert", id, user_id, username, content, created_at }` or `{ op: "delete", id }` |
 
 WS reconnect uses exponential backoff: 1s → 2s → 4s … → 30s max.
 
@@ -129,7 +129,7 @@ WS reconnect uses exponential backoff: 1s → 2s → 4s … → 30s max.
 
 ## Admin Flag
 
-Players have an `is_admin` boolean (default `false`). It's returned in the auth response and stored in localStorage. Use `RequireAdmin` middleware after `RequireAuth` to gate admin-only routes. Use `WithAdmin(r, isAdmin)` to inject the flag into the request context after a DB lookup.
+Users have an `is_admin` boolean (default `false`). It's returned in the auth response and stored in localStorage. Use `RequireAdmin` middleware after `RequireAuth` to gate admin-only routes. Use `WithAdmin(r, isAdmin)` to inject the flag into the request context after a DB lookup.
 
 ---
 

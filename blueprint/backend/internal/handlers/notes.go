@@ -29,8 +29,8 @@ func HandleCreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerID := mw.GetPlayerID(r)
-	note, err := db.CreateNote(uuid.NewString(), playerID, body.Content)
+	userID := mw.GetUserID(r)
+	note, err := db.CreateNote(uuid.NewString(), userID, body.Content)
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
@@ -43,9 +43,9 @@ func HandleCreateNote(w http.ResponseWriter, r *http.Request) {
 
 func HandleDeleteNote(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	playerID := mw.GetPlayerID(r)
+	userID := mw.GetUserID(r)
 
-	if err := db.DeleteNote(id, playerID); err != nil {
+	if err := db.DeleteNote(id, userID); err != nil {
 		if db.IsNotFound(err) {
 			jsonError(w, "note not found or not yours", http.StatusNotFound)
 			return

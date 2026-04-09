@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useUserStore } from "@/stores/useUserStore";
 
-const playerStore = usePlayerStore();
+const userStore = useUserStore();
 
 onMounted(() => {
-  playerStore.init();
+  userStore.init();
 });
 </script>
 

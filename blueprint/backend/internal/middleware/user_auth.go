@@ -10,7 +10,7 @@ import (
 
 type contextKey string
 
-const PlayerIDKey contextKey = "player_id"
+const UserIDKey contextKey = "user_id"
 
 func RequireAuth(secret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -39,27 +39,26 @@ func RequireAuth(secret []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			playerID, ok := claims["player_id"].(string)
+			userID, ok := claims["user_id"].(string)
 			if !ok {
-				http.Error(w, `{"error":"invalid player_id"}`, http.StatusUnauthorized)
+				http.Error(w, `{"error":"invalid user_id"}`, http.StatusUnauthorized)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), PlayerIDKey, playerID)
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func GetPlayerID(r *http.Request) string {
-	id, _ := r.Context().Value(PlayerIDKey).(string)
+func GetUserID(r *http.Request) string {
+	id, _ := r.Context().Value(UserIDKey).(string)
 	return id
 }
 
-// RequireAdmin returns 403 if the player does not have is_admin set.
-// Must be used after RequireAuth — it reads a separate is_admin context value
-// set by a wrapping handler, or you can check at the DB level in your handler.
-// For convenience, pair with a DB lookup in your handler if needed.
+// RequireAdmin returns 403 if the user does not have is_admin set.
+// Must be used after RequireAuth. Pair with WithAdmin to inject the flag
+// after a DB lookup if you need to check it at the middleware layer.
 func RequireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		isAdmin, _ := r.Context().Value(contextKey("is_admin")).(bool)
@@ -71,8 +70,7 @@ func RequireAdmin(next http.Handler) http.Handler {
 	})
 }
 
-// WithAdmin injects is_admin into the request context. Call this after
-// looking up the player from the DB if you need admin-gated routes.
+// WithAdmin injects is_admin into the request context after a DB lookup.
 func WithAdmin(r *http.Request, isAdmin bool) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), contextKey("is_admin"), isAdmin))
 }

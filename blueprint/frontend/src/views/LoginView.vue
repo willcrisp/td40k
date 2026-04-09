@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { apiLogin, apiRegister } from "@/lib/api";
 
 const router = useRouter();
-const playerStore = usePlayerStore();
+const userStore = useUserStore();
 
 const username = ref("");
 const password = ref("");
@@ -17,7 +17,7 @@ async function handleLogin() {
   loading.value = true;
   try {
     const res = await apiLogin(username.value, password.value);
-    playerStore.setAuth(res.data);
+    userStore.setAuth(res.data);
     router.push("/");
   } catch {
     error.value = "Invalid credentials.";
@@ -31,7 +31,7 @@ async function handleRegister() {
   loading.value = true;
   try {
     const res = await apiRegister(username.value, password.value);
-    playerStore.setAuth(res.data);
+    userStore.setAuth(res.data);
     router.push("/");
   } catch (e: unknown) {
     const status = (e as { response?: { status?: number } })?.response?.status;
@@ -57,11 +57,7 @@ async function handleRegister() {
         <TabPanels>
           <TabPanel value="login">
             <div class="flex flex-column gap-3 pt-3">
-              <InputText
-                v-model="username"
-                placeholder="Username"
-                fluid
-              />
+              <InputText v-model="username" placeholder="Username" fluid />
               <Password
                 v-model="password"
                 placeholder="Password"
@@ -79,11 +75,7 @@ async function handleRegister() {
           </TabPanel>
           <TabPanel value="register">
             <div class="flex flex-column gap-3 pt-3">
-              <InputText
-                v-model="username"
-                placeholder="Username"
-                fluid
-              />
+              <InputText v-model="username" placeholder="Username" fluid />
               <Password
                 v-model="password"
                 placeholder="Password"

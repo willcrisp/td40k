@@ -5,17 +5,17 @@ import { useRouter } from "vue-router";
 import { useCounterStore } from "@/stores/useCounterStore";
 import { useNotesStore } from "@/stores/useNotesStore";
 import { useWebSocketStore } from "@/stores/useWebSocketStore";
-import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useUserStore } from "@/stores/useUserStore";
 
 const router = useRouter();
 const counterStore = useCounterStore();
 const notesStore = useNotesStore();
 const wsStore = useWebSocketStore();
-const playerStore = usePlayerStore();
+const userStore = useUserStore();
 
 const { value, loading: counterLoading } = storeToRefs(counterStore);
 const { notes, adding } = storeToRefs(notesStore);
-const { username, playerId } = storeToRefs(playerStore);
+const { username, userId } = storeToRefs(userStore);
 
 const newNote = ref("");
 
@@ -37,7 +37,7 @@ async function handleAddNote() {
 
 function handleLogout() {
   wsStore.disconnect();
-  playerStore.logout();
+  userStore.logout();
   router.push("/auth");
 }
 </script>
@@ -100,12 +100,12 @@ function handleLogout() {
           >
             <div class="flex-1">
               <span class="font-semibold text-sm">
-                {{ note.player_id === playerId ? "You" : note.username }}
+                {{ note.user_id === userId ? "You" : note.username }}
               </span>
               <span class="text-sm ml-2">{{ note.content }}</span>
             </div>
             <Button
-              v-if="note.player_id === playerId"
+              v-if="note.user_id === userId"
               icon="pi pi-trash"
               severity="danger"
               size="small"

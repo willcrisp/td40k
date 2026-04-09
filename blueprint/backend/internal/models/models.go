@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Player struct {
+type User struct {
 	ID        string    `json:"id"`
 	Username  string    `json:"username"`
 	IsAdmin   bool      `json:"is_admin"`
@@ -15,7 +15,7 @@ type CounterState struct {
 
 type Note struct {
 	ID        string    `json:"id"`
-	PlayerID  string    `json:"player_id"`
+	UserID    string    `json:"user_id"`
 	Username  string    `json:"username"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
@@ -24,7 +24,7 @@ type Note struct {
 type NoteEvent struct {
 	Op        string    `json:"op"`
 	ID        string    `json:"id"`
-	PlayerID  string    `json:"player_id,omitempty"`
+	UserID    string    `json:"user_id,omitempty"`
 	Username  string    `json:"username,omitempty"`
 	Content   string    `json:"content,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty"`

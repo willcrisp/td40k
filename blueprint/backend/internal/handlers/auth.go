@@ -19,7 +19,7 @@ type authRequest struct {
 
 type authResponse struct {
 	Token    string `json:"token"`
-	PlayerID string `json:"player_id"`
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	IsAdmin  bool   `json:"is_admin"`
 }
@@ -30,12 +30,12 @@ func jsonError(w http.ResponseWriter, msg string, code int) {
 	json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
-func issueToken(playerID string) (string, error) {
+func issueToken(userID string) (string, error) {
 	secret := []byte(os.Getenv("JWT_SECRET"))
 	claims := jwt.MapClaims{
-		"player_id": playerID,
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"user_id": userID,
+		"iat":     time.Now().Unix(),
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secret)
 }
@@ -57,13 +57,13 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	player, err := db.CreatePlayer(uuid.NewString(), req.Username, string(hash))
+	user, err := db.CreateUser(uuid.NewString(), req.Username, string(hash))
 	if err != nil {
 		jsonError(w, "username already taken", http.StatusConflict)
 		return
 	}
 
-	token, err := issueToken(player.ID)
+	token, err := issueToken(user.ID)
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
@@ -73,9 +73,9 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(authResponse{
 		Token:    token,
-		PlayerID: player.ID,
-		Username: player.Username,
-		IsAdmin:  player.IsAdmin,
+		UserID:   user.ID,
+		Username: user.Username,
+		IsAdmin:  user.IsAdmin,
 	})
 }
 
@@ -86,7 +86,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, hash, isAdmin, err := db.GetPlayerByUsername(req.Username)
+	id, hash, isAdmin, err := db.GetUserByUsername(req.Username)
 	if err != nil {
 		jsonError(w, "invalid credentials", http.StatusUnauthorized)
 		return
@@ -106,7 +106,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(authResponse{
 		Token:    token,
-		PlayerID: id,
+		UserID:   id,
 		Username: req.Username,
 		IsAdmin:  isAdmin,
 	})

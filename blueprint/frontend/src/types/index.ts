@@ -1,6 +1,6 @@
 export interface AuthResponse {
   token: string;
-  player_id: string;
+  user_id: string;
   username: string;
   is_admin: boolean;
 }
@@ -11,7 +11,7 @@ export interface CounterState {
 
 export interface Note {
   id: string;
-  player_id: string;
+  user_id: string;
   username: string;
   content: string;
   created_at: string;
@@ -20,7 +20,7 @@ export interface Note {
 export interface NoteEvent {
   op: "insert" | "delete";
   id: string;
-  player_id?: string;
+  user_id?: string;
   username?: string;
   content?: string;
   created_at?: string;
