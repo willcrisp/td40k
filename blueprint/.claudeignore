@@ -1,0 +1,46 @@
+# Dependencies — never useful for Claude to read
+node_modules/
+frontend/node_modules/
+vendor/
+
+# Lock files — generated, noisy
+bun.lock
+bun.lockb
+package-lock.json
+yarn.lock
+go.sum
+
+# Build outputs
+dist/
+build/
+*.out
+*.a
+*.so
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+.AppleDouble
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git internals
+.git/
+
+# Temporary
+*.tmp
+*.bak
