@@ -55,3 +55,24 @@ func GetPlayerID(r *http.Request) string {
 	id, _ := r.Context().Value(PlayerIDKey).(string)
 	return id
 }
+
+// RequireAdmin returns 403 if the player does not have is_admin set.
+// Must be used after RequireAuth — it reads a separate is_admin context value
+// set by a wrapping handler, or you can check at the DB level in your handler.
+// For convenience, pair with a DB lookup in your handler if needed.
+func RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		isAdmin, _ := r.Context().Value(contextKey("is_admin")).(bool)
+		if !isAdmin {
+			http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// WithAdmin injects is_admin into the request context. Call this after
+// looking up the player from the DB if you need admin-gated routes.
+func WithAdmin(r *http.Request, isAdmin bool) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), contextKey("is_admin"), isAdmin))
+}

@@ -21,6 +21,7 @@ type authResponse struct {
 	Token    string `json:"token"`
 	PlayerID string `json:"player_id"`
 	Username string `json:"username"`
+	IsAdmin  bool   `json:"is_admin"`
 }
 
 func jsonError(w http.ResponseWriter, msg string, code int) {
@@ -74,6 +75,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		Token:    token,
 		PlayerID: player.ID,
 		Username: player.Username,
+		IsAdmin:  player.IsAdmin,
 	})
 }
 
@@ -84,7 +86,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, hash, err := db.GetPlayerByUsername(req.Username)
+	id, hash, isAdmin, err := db.GetPlayerByUsername(req.Username)
 	if err != nil {
 		jsonError(w, "invalid credentials", http.StatusUnauthorized)
 		return
@@ -106,5 +108,6 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		Token:    token,
 		PlayerID: id,
 		Username: req.Username,
+		IsAdmin:  isAdmin,
 	})
 }

@@ -3,7 +3,7 @@ package listen
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -12,10 +12,16 @@ import (
 )
 
 func StartListener(dsn string, hub *ws.Hub) {
+	backoff := 5 * time.Second
 	for {
 		if err := listen(dsn, hub); err != nil {
-			fmt.Printf("listener error: %v — reconnecting in 5s\n", err)
-			time.Sleep(5 * time.Second)
+			slog.Error("listener error", "err", err, "reconnect_in", backoff)
+			time.Sleep(backoff)
+			if backoff < 60*time.Second {
+				backoff *= 2
+			}
+		} else {
+			backoff = 5 * time.Second
 		}
 	}
 }
@@ -23,32 +29,47 @@ func StartListener(dsn string, hub *ws.Hub) {
 func listen(dsn string, hub *ws.Hub) error {
 	conn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
-		return fmt.Errorf("connect: %w", err)
+		return err
 	}
 	defer conn.Close(context.Background())
 
-	if _, err := conn.Exec(context.Background(), "LISTEN counter_updates"); err != nil {
-		return fmt.Errorf("LISTEN: %w", err)
+	for _, channel := range []string{"counter_updates", "notes_updates"} {
+		if _, err := conn.Exec(context.Background(), "LISTEN "+channel); err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("listener: watching counter_updates")
+	slog.Info("listener ready", "channels", []string{"counter_updates", "notes_updates"})
 
 	for {
 		notification, err := conn.WaitForNotification(context.Background())
 		if err != nil {
-			return fmt.Errorf("WaitForNotification: %w", err)
+			return err
 		}
 
-		var payload models.CounterState
-		if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
-			fmt.Printf("listener: bad payload: %v\n", err)
+		var msg models.WsMessage
+
+		switch notification.Channel {
+		case "counter_updates":
+			var payload models.CounterState
+			if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
+				slog.Warn("bad counter payload", "err", err)
+				continue
+			}
+			msg = models.WsMessage{Event: "counter_update", Payload: payload}
+
+		case "notes_updates":
+			var payload models.NoteEvent
+			if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
+				slog.Warn("bad notes payload", "err", err)
+				continue
+			}
+			msg = models.WsMessage{Event: "notes_update", Payload: payload}
+
+		default:
 			continue
 		}
 
-		msg := models.WsMessage{
-			Event:   "counter_update",
-			Payload: payload,
-		}
 		b, err := json.Marshal(msg)
 		if err != nil {
 			continue

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -9,25 +10,27 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/willcrisp/blueprint/internal/db"
 	"github.com/willcrisp/blueprint/internal/handlers"
-	mw "github.com/willcrisp/blueprint/internal/middleware"
 	"github.com/willcrisp/blueprint/internal/listen"
+	mw "github.com/willcrisp/blueprint/internal/middleware"
 	"github.com/willcrisp/blueprint/internal/ws"
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	dsn := os.Getenv("POSTGRES_DSN")
 	if dsn == "" {
-		fmt.Fprintln(os.Stderr, "POSTGRES_DSN is required")
+		slog.Error("POSTGRES_DSN is required")
 		os.Exit(1)
 	}
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 
 	if err := db.Init(dsn); err != nil {
-		fmt.Fprintf(os.Stderr, "db init: %v\n", err)
+		slog.Error("db init failed", "err", err)
 		os.Exit(1)
 	}
 	if err := db.RunMigrations(); err != nil {
-		fmt.Fprintf(os.Stderr, "migrations: %v\n", err)
+		slog.Error("migrations failed", "err", err)
 		os.Exit(1)
 	}
 
@@ -42,7 +45,7 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
 				return
@@ -52,6 +55,10 @@ func main() {
 	})
 
 	// Public
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
 	r.Get("/ws", hub.ServeWS)
 	r.Post("/api/auth/register", handlers.HandleRegister)
 	r.Post("/api/auth/login", handlers.HandleLogin)
@@ -61,12 +68,15 @@ func main() {
 		r.Use(mw.RequireAuth(jwtSecret))
 		r.Get("/api/counter", handlers.HandleGetCounter)
 		r.Post("/api/counter/increment", handlers.HandleIncrementCounter)
+		r.Get("/api/notes", handlers.HandleListNotes)
+		r.Post("/api/notes", handlers.HandleCreateNote)
+		r.Delete("/api/notes/{id}", handlers.HandleDeleteNote)
 	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	fmt.Printf("listening on :%s\n", port)
+	slog.Info("server listening", "port", port)
 	http.ListenAndServe(":"+port, r)
 }

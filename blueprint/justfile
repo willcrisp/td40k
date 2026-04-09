@@ -22,3 +22,7 @@ reset:
     @echo "Wiping database and rebuilding..."
     docker compose down -v
     docker compose up --build -d
+
+# Open a psql shell inside the running db container
+psql:
+    docker compose exec db psql -U app app

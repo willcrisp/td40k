@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -27,6 +27,8 @@ var migrations = []string{
 	"db/migrations/001_create_players.sql",
 	"db/migrations/002_create_counter.sql",
 	"db/migrations/003_create_triggers.sql",
+	"db/migrations/004_create_notes.sql",
+	"db/migrations/005_add_admin_to_players.sql",
 }
 
 func RunMigrations() error {
@@ -62,15 +64,10 @@ func RunMigrations() error {
 			return fmt.Errorf("read migration %s: %w", path, err)
 		}
 
-		statements := strings.Split(string(sql), ";")
-		for _, stmt := range statements {
-			stmt = strings.TrimSpace(stmt)
-			if stmt == "" {
-				continue
-			}
-			if _, err := Pool.Exec(ctx, stmt); err != nil {
-				return fmt.Errorf("exec migration %s: %w", path, err)
-			}
+		// Execute the whole file as one statement — required for PL/pgSQL
+		// functions that contain semicolons inside $$ blocks.
+		if _, err := Pool.Exec(ctx, string(sql)); err != nil {
+			return fmt.Errorf("exec migration %s: %w", path, err)
 		}
 
 		if _, err := Pool.Exec(ctx,
@@ -79,7 +76,7 @@ func RunMigrations() error {
 			return fmt.Errorf("record migration %s: %w", version, err)
 		}
 
-		fmt.Printf("applied migration %s\n", version)
+		slog.Info("applied migration", "version", version)
 	}
 	return nil
 }
